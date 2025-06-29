@@ -1,20 +1,9 @@
-// const dotenv = require('dotenv')
-// dotenv.config()
-
-// const express = require('express')
-// const app = express()
-// const cors = require('cors')
-// const registrationRoutes = require('./routes/registration')
-
-// app.use(cors())
-// app.use(express.json())
-// app.use(express.urlencoded({extended:true}))
-
-// app.use('/api/registration', registrationRoutes)
-
-// module.exports = app;
-
 const dotenv = require("dotenv");
+const registrationRoutes = require("./routes/registration");
+const familyConsiltalition = require("./routes/family.consitalation.registration.routes");
+const ich = require("./routes/ICH.Registartion.routes");
+const contactRoutes = require("./routes/contact");
+const adminRoutes = require('./routes/adminRoutes');
 dotenv.config();
 
 const express = require("express");
@@ -22,9 +11,6 @@ const app = express();
 const cors = require("cors");
 const path = require("path");
 
-// Import your routes
-const registrationRoutes = require("./routes/registration");
-const contactRoutes = require("./routes/contact");
 
 // Middleware
 app.use(cors());
@@ -33,12 +19,11 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Base API URL
-const BASE_API_URL = "/api";
-
-// Use base URL for all routes
-app.use(`${BASE_API_URL}/registration`, registrationRoutes);
-app.use(`${BASE_API_URL}/contact`, contactRoutes);
+app.use(`/api/registration`, registrationRoutes);
+app.use(`/api/familyConsitalation`, familyConsiltalition);
+app.use(`/api/ich`, ich);
+app.use(`/api/`, contactRoutes);
+app.use('/api/admin', adminRoutes);
 app.get("/", (req, res) => {
   console.log("server is running");
   res.status(200).json({ message: "Server is running" });
