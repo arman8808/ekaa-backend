@@ -39,8 +39,9 @@ const BASE_API_URL = "/api";
 // Use base URL for all routes
 app.use(`${BASE_API_URL}/registration`, registrationRoutes);
 app.use(`${BASE_API_URL}/contact`, contactRoutes);
-app.get("/", (req, res) =>
-  res.status(200).json({ message: "Server is running" })
-);
+app.get("/", (req, res) => {
+  console.log("server is running");
+  res.status(200).json({ message: "Server is running" });
+});
 
 module.exports = app;
