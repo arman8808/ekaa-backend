@@ -8,4 +8,8 @@ router.post(
   ichRegistrationController.submitICHRegistration
 );
 
+router.get('/', ichRegistrationController.getAllICHRegistrations);
+
+// GET: Get a single ICH registration by ID
+router.get('/:id', ichRegistrationController.getOneICHRegistration);
 module.exports = router;
