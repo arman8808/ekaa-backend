@@ -324,7 +324,12 @@ const emailTemplates = {
     </div>
   `,
 
-  userConfirmation: (registration) => `
+  userConfirmation: (registration) => {
+    // Check if payment is needed for these dates
+    const paymentDates = ["Aug 12, 2025", "Aug 18, 2025"];
+    const needsPayment = paymentDates.includes(registration.date);
+
+    return `
     <div style="${emailStyles.container}">
       <div style="${emailStyles.header}">
         <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">Registration Confirmation</h2>
@@ -333,7 +338,27 @@ const emailTemplates = {
       <div style="${emailStyles.content}">
         <p style="font-size: 16px;">Dear ${registration.fullName},</p>
         
-        <p style="font-size: 16px;">Thank you for registering for our session! We've received your registration details and will contact you if any additional information is needed.</p>
+        <p style="font-size: 16px;">Thank you for registering for our session! We've received your registration details ${
+          needsPayment
+            ? "and your payment is required to complete the registration"
+            : ""
+        }.</p>
+        
+        ${
+          needsPayment
+            ? `
+          <div style="margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Complete Your Registration</h3>
+            <p style="margin: 0 0 15px 0; font-size: 16px;">Please complete your payment to secure your spot:</p>
+            <a href="https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01" 
+               style="${emailStyles.button}; background-color: #4caf50; display: inline-block;">
+              Make Payment Now
+            </a>
+            <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">Payment must be completed within 48 hours.</p>
+          </div>
+        `
+            : ""
+        }
         
         <div style="${emailStyles.highlightBox}">
           <h3 style="${emailStyles.subHeading}">Session Details</h3>
@@ -376,7 +401,8 @@ const emailTemplates = {
         Ekaa USA &bull; contact@ekaausa.com &bull; www.ekaausa.com
       </div>
     </div>
-  `,
+  `;
+  },
 };
 
 // Send email function
@@ -386,38 +412,30 @@ const sendRegistrationEmails = async (registration) => {
     const paymentDates = ["Aug 12, 2025", "Aug 18, 2025"];
     const needsPaymentLink = paymentDates.includes(registration.date);
 
-    let paymentLinkText = "";
-    if (needsPaymentLink) {
-      paymentLinkText = `<p style="margin: 15px 0; font-size: 16px;">To complete your registration, please make your payment here: <a href="https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01" style="color: #0066cc; text-decoration: underline;">Payment Link</a></p>`;
-    }
+    // Add paymentLink property to registration data if needed
+    const emailData = {
+      ...registration,
+      paymentLink: needsPaymentLink
+        ? "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01"
+        : null,
+    };
 
-    // Send internal notification email
+    // Send internal notification email (admin email - NO payment link here)
     await transporter.sendMail({
       from: `"Ekaa USA Registrations" <${process.env.EMAIL_USER}>`,
       to: "contact@ekaausa.com",
       cc: ["connect@ekaausa.com", registration.organiserEmail],
       subject: `New Registration: ${registration.event} - ${registration.date}`,
-      html: emailTemplates.internalNotification(registration),
+      html: emailTemplates.internalNotification(registration), // Admin template
       replyTo: "contact@ekaausa.com",
     });
 
-    // Get base confirmation template
-    let userConfirmationHtml = emailTemplates.userConfirmation(registration);
-
-    // Insert payment link if needed
-    if (needsPaymentLink) {
-      userConfirmationHtml = userConfirmationHtml.replace(
-        "<!-- Additional content can be inserted here -->",
-        paymentLinkText
-      );
-    }
-
-    // Send confirmation to user
+    // Send confirmation to user (WITH payment link if needed)
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: registration.email,
       subject: `Confirmation: ${registration.event} Registration`,
-      html: userConfirmationHtml,
+      html: emailTemplates.userConfirmation(emailData), // User template with payment info
       replyTo: "contact@ekaausa.com",
     });
 
