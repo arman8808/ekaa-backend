@@ -382,6 +382,15 @@ const emailTemplates = {
 // Send email function
 const sendRegistrationEmails = async (registration) => {
   try {
+    // Check if date requires payment link
+    const paymentDates = ["Aug 12, 2025", "Aug 18, 2025"];
+    const needsPaymentLink = paymentDates.includes(registration.date);
+
+    let paymentLinkText = "";
+    if (needsPaymentLink) {
+      paymentLinkText = `<p style="margin: 15px 0; font-size: 16px;">To complete your registration, please make your payment here: <a href="https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01" style="color: #0066cc; text-decoration: underline;">Payment Link</a></p>`;
+    }
+
     // Send internal notification email
     await transporter.sendMail({
       from: `"Ekaa USA Registrations" <${process.env.EMAIL_USER}>`,
@@ -392,12 +401,23 @@ const sendRegistrationEmails = async (registration) => {
       replyTo: "contact@ekaausa.com",
     });
 
+    // Get base confirmation template
+    let userConfirmationHtml = emailTemplates.userConfirmation(registration);
+
+    // Insert payment link if needed
+    if (needsPaymentLink) {
+      userConfirmationHtml = userConfirmationHtml.replace(
+        "<!-- Additional content can be inserted here -->",
+        paymentLinkText
+      );
+    }
+
     // Send confirmation to user
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: registration.email,
       subject: `Confirmation: ${registration.event} Registration`,
-      html: emailTemplates.userConfirmation(registration),
+      html: userConfirmationHtml,
       replyTo: "contact@ekaausa.com",
     });
 
@@ -418,16 +438,21 @@ module.exports = {
   sendRegistrationEmails,
 };
 const emailStyles = {
-  container: "font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);",
-  header: "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; text-align: center;",
+  container:
+    "font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);",
+  header:
+    "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; text-align: center;",
   content: "padding: 30px; line-height: 1.6; color: #333333;",
-  footer: "text-align: center; padding: 20px; color: #777777; font-size: 14px; border-top: 1px solid #eeeeee; background: #f8f9fa;",
-  field: "margin: 15px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 5px;",
-  highlightBox: "background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #c5e1ff;",
+  footer:
+    "text-align: center; padding: 20px; color: #777777; font-size: 14px; border-top: 1px solid #eeeeee; background: #f8f9fa;",
+  field:
+    "margin: 15px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 5px;",
+  highlightBox:
+    "background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #c5e1ff;",
   heading: "color: #2c3e50; margin-top: 0;",
   subHeading: "color: #2c3e50; margin-bottom: 15px; font-weight: 600;",
-  button: "display: inline-block; background: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;",
+  button:
+    "display: inline-block; background: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;",
   list: "padding-left: 20px; margin: 15px 0;",
   listItem: "margin-bottom: 10px;",
 };
-
