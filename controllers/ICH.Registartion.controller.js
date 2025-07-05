@@ -1,6 +1,14 @@
 const ICHRegistration = require("../models/ICH.Registartion.modal");
+const {
+  sendICHUserConfirmation,
+  sendICHAdminNotification,
+} = require("../utils/mailer");
 // const { sendICHUserConfirmation, sendICHAdminNotification } = require('../services/ichEmailService');
-
+const DOCTOR_EMAIL_MAP = {
+  "Dr Aiyasawmy's A/C": "Aiyasawmy@gmail.com",
+  "Dr Manoj's A/C": "docbhardwaj@gmail.com",
+  "Dr. Sonia Gupte": "Sonia@enso-nia.com",
+};
 exports.submitICHRegistration = async (req, res) => {
   try {
     // Extract file paths
@@ -21,16 +29,18 @@ exports.submitICHRegistration = async (req, res) => {
     await ichRegistration.save();
 
     // Send confirmation emails
-    // await sendICHUserConfirmation({
-    //   email: req.body.email,
-    //   name: `${req.body.firstName} ${req.body.lastName}`,
-    // });
+    await sendICHUserConfirmation({
+      email: req.body.email,
+      name: `${req.body.firstName} ${req.body.lastName}`,
+      registration: ichRegistration, // Pass the full registration object
+    });
 
-    // await sendICHAdminNotification({
-    //   userEmail: req.body.email,
-    //   userName: `${req.body.firstName} ${req.body.lastName}`,
-    //   registrationId: ichRegistration._id,
-    // });
+    await sendICHAdminNotification({
+      userEmail: req.body.email,
+      userName: `${req.body.firstName} ${req.body.lastName}`,
+      registrationId: ichRegistration._id,
+      city: req.body.city,
+    });
 
     res.status(201).json({
       success: true,

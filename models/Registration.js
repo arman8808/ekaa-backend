@@ -8,7 +8,7 @@ const registrationSchema = new mongoose.Schema({
   currentAddress: { type: String, required: true, trim: true },
   permanenetAddress: { type: String, required: true, trim: true },
   city: { type: String, required: true, trim: true },
-  timeslot: { type: String, required: true },
+  timeslot: { type: String, },
   TelNo: { type: String, trim: true },
   mobileNo: { type: String, required: true, trim: true },
   office: { type: String, trim: true },
