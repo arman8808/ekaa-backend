@@ -694,12 +694,14 @@ const sendICHAdminNotification = async ({
   city,
 }) => {
   try {
-    const isManojTraining =
-      city.includes("ICH L3 Training") || city.includes("ICH L1 Training");
+    const isL1Training = city.includes("ICH L1 Training");
+    const isL3Training = city.includes("ICH L3 Training");
     const cc = ["connect@ekaausa.com"];
 
-    if (isManojTraining) {
+    if (isL1Training) {
       cc.push(DOCTOR_EMAIL_MAP["Dr Manoj's A/C"]);
+    } else if (isL3Training) {
+      cc.push(DOCTOR_EMAIL_MAP["Dr Aiyasawmy's A/C"]);
     }
 
     await transporter.sendMail({
@@ -721,6 +723,7 @@ const sendICHAdminNotification = async ({
     return false;
   }
 };
+
 const decodeEmailTemplates = {
   adminNotification: (registration) => {
     const isDecodeChild = registration.city?.includes("Decode The Child");
@@ -888,7 +891,7 @@ const sendRegistrationEmail = async (registration) => {
     const cc = ["connect@ekaausa.com"];
 
     if (isDecodeChild) {
-      cc.push(DOCTOR_EMAIL_MAP["Dr Manoj's A/C"]);
+      cc.push(DOCTOR_EMAIL_MAP["Dr Aiyasawmy's A/C"]);
     }
 
     await transporter.sendMail({
