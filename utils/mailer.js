@@ -79,7 +79,7 @@ const transporter = nodemailer.createTransport({
 //         <div style="${emailStyles.content}">
 //           <p>Dear ${firstName},</p>
 //           <p>Thank you for registering with EKAA.</p>
-          
+
 //           <h3 style="${emailStyles.subHeading}">📋 Registration Details</h3>
 //           <div style="${emailStyles.field}">
 //             <p><strong>Course:</strong> ${levelName}</p>
@@ -87,12 +87,12 @@ const transporter = nodemailer.createTransport({
 //             <p><strong>Date:</strong> ${formattedDate}</p>
 //             <p><strong>Time:</strong> ${timeInfo}</p>
 //           </div>
-          
+
 //           <div style="${emailStyles.highlightBox}">
 //             <h3 style="${emailStyles.subHeading}">📅 What's Next</h3>
 //             <p>A representative from EKAA will contact you shortly to guide you through the next steps.</p>
 //           </div>
-          
+
 //           <p>For any queries, contact us at <a href="mailto:connect@ekaausa.com" style="color: #667eea; text-decoration: none;">connect@ekaausa.com</a>.</p>
 //         </div>
 //         <div style="${emailStyles.footer}">
@@ -456,7 +456,15 @@ const DOCTOR_EMAIL_MAP = {
   "Dr Aiyasawmy's A/C": "Aiyasawmy@gmail.com",
   "Dr. Sonia Gupte": "Sonia@enso-nia.com",
 };
-
+const EVENT_DOCTOR_MAP = {
+  "Decode The Child": "Dr Aiyasawmy's A/C",
+  "L 1": "Dr. Sonia Gupte",
+};
+const PAYMENT_LINK_MAP = {
+  // "Dr Manoj's A/C": "https://buy.stripe.com/xxxx_for_manoj",
+  "Dr Aiyasawmy's A/C": "https://buy.stripe.com/6oU6ozgGsc45cfCgYj93y02",
+  "Dr. Sonia Gupte": "https://buy.stripe.com/14A3cxdvCbBn8qU32O7Vm0z",
+};
 const ichEmailTemplates = {
   adminNotification: ({ userName, userEmail, registrationId, city }) => {
     const isManojTraining =
@@ -532,10 +540,11 @@ const ichEmailTemplates = {
     `;
   },
 
-  userConfirmation: (registration) => {
+  userConfirmation: (registration, paymentLink) => {
     const cityParts = registration.city?.split("|") || [];
-    const trainingType = cityParts[1]?.trim() || "ICH Training";
-    const trainingDates = cityParts[2]?.trim() || "";
+    const eventName = cityParts[1]?.trim() || "EKAA Program";
+    const eventDate = cityParts[2]?.trim() || "";
+    const hasDoctor = !!EVENT_DOCTOR_MAP[eventName];
 
     const isL1 = trainingType.includes("ICH L1 Training");
     const isL3 = trainingType.includes("ICH L3 Training");
@@ -726,160 +735,129 @@ const sendICHAdminNotification = async ({
 
 const decodeEmailTemplates = {
   adminNotification: (registration) => {
-    const isDecodeChild = registration.city?.includes("Decode The Child");
     const cityParts = registration.city?.split("|") || [];
-    const eventName = cityParts[1]?.trim() || "EKAA Program";
-    const eventDate = cityParts[2]?.trim() || "";
+    const eventName  = cityParts[1]?.trim() || "EKAA Program";
+    const eventDate  = cityParts[2]?.trim() || "";
+    const doctorKey  = EVENT_DOCTOR_MAP[eventName];
+    const isDecodeChild = eventName.includes("Decode The Child");
 
     return `
-    <div style="${emailStyles.container}">
-      <div style="${emailStyles.header}">
-        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">New Registration: ${eventName}</h2>
-      </div>
-      
-      <div style="${emailStyles.content}">
-        <div style="${emailStyles.highlightBox}">
-          <h3 style="${emailStyles.subHeading}">Registrant Information</h3>
-          
-          <div style="${emailStyles.list}">
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
-                <strong>Name:</strong> ${registration.firstName} ${
-      registration.lastName
-    }
+      <div style="${emailStyles.container}">
+        <div style="${emailStyles.header}">
+          <h2 style="margin:0;font-weight:500;font-size:1.8rem;">
+            New Registration: ${eventName}
+          </h2>
+        </div>
+        <div style="${emailStyles.content}">
+          <div style="${emailStyles.highlightBox}">
+            <h3 style="${emailStyles.subHeading}">Registrant Information</h3>
+            <div style="${emailStyles.list}">
+              <div style="${emailStyles.listItem}">
+                <strong>Name:</strong> ${registration.firstName} ${registration.lastName}
               </div>
-            </div>
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+              <div style="${emailStyles.listItem}">
                 <strong>Email:</strong> ${registration.email}
               </div>
-            </div>
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+              <div style="${emailStyles.listItem}">
                 <strong>Program:</strong> ${eventName}
               </div>
-            </div>
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+              <div style="${emailStyles.listItem}">
                 <strong>Date:</strong> ${eventDate}
               </div>
-            </div>
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+              <div style="${emailStyles.listItem}">
                 <strong>Phone:</strong> ${registration.mobileNo}
               </div>
             </div>
           </div>
+          ${
+            doctorKey
+              ? `<div style="margin:20px 0;padding:15px;background-color:#fff8e1;border-radius:8px;border-left:4px solid #ffc107;">
+                   <p style="margin:0;font-size:15px;">
+                     <strong>Note:</strong> ${doctorKey} has been CC’d on this notification.
+                   </p>
+                 </div>`
+              : ""
+          }
         </div>
-        
-        ${
-          isDecodeChild
-            ? `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fff8e1; border-radius: 8px; border-left: 4px solid #ffc107;">
-          <p style="margin: 0; font-size: 15px;">
-            <strong>Note:</strong> Dr. Manoj has been CC'd on this notification for Decode The Child program.
-          </p>
+        <div style="${emailStyles.footer}">
+          Registration received on ${new Date().toLocaleString()}
         </div>
-        `
-            : ""
-        }
       </div>
-      
-      <div style="${emailStyles.footer}">
-        Registration received on ${new Date().toLocaleString()}
-      </div>
-    </div>
     `;
   },
 
-  userConfirmation: (registration) => {
+  userConfirmation: (registration, paymentLink) => {
     const cityParts = registration.city?.split("|") || [];
     const eventName = cityParts[1]?.trim() || "EKAA Program";
     const eventDate = cityParts[2]?.trim() || "";
-    const isDecodeChild = eventName.includes("Decode The Child");
-    const paymentLink =
-      "https://buy.stripe.com/6oU6ozgGsc45cfCgYj93y02";
+    const hasDoctor = !!EVENT_DOCTOR_MAP[eventName];
 
     return `
-    <div style="${emailStyles.container}">
-      <div style="${emailStyles.header}">
-        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">Registration Confirmation</h2>
-      </div>
-      
-      <div style="${emailStyles.content}">
-        <p style="font-size: 16px;">Dear ${registration.firstName} ${
-      registration.lastName
-    },</p>
-        
-        <p style="font-size: 16px;">Thank you for registering for our <strong>${eventName}</strong> program!</p>
-        
-        ${
-          isDecodeChild
-            ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
-            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Decode The Child Details</h3>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Your session with Dr. Manoj Bhardwaj will be on ${eventDate}.
-            </p>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Please complete your payment to confirm your spot:
-            </p>
-            <a href="${paymentLink}" 
-               style="${emailStyles.button}; background-color: #2196f3;">
-              Make Payment Now
-            </a>
-            <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
-              Payment must be completed within 48 hours.
-            </p>
-          </div>
-        `
-            : ""
-        }
-        
-        <div style="${emailStyles.highlightBox}">
-          <h3 style="${emailStyles.subHeading}">Your Registration Details</h3>
-          <div style="${emailStyles.list}">
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+      <div style="${emailStyles.container}">
+        <div style="${emailStyles.header}">
+          <h2 style="margin:0;font-weight:500;font-size:1.8rem;">Registration Confirmation</h2>
+        </div>
+        <div style="${emailStyles.content}">
+          <p style="font-size:16px;">
+            Dear ${registration.firstName} ${registration.lastName},
+          </p>
+          <p style="font-size:16px;">
+            Thank you for registering for our <strong>${eventName}</strong> program!
+          </p>
+          ${
+            hasDoctor
+              ? `
+            <div style="margin:20px 0;padding:20px;background-color:#e3f2fd;border-radius:8px;border-left:4px solid #2196f3;">
+              <p style="margin:0 0 15px 0;font-size:16px;">
+                Your session is scheduled on ${eventDate}.
+              </p>
+              <p style="margin:0 0 15px 0;font-size:16px;">
+                Please complete your payment to confirm your spot:
+              </p>
+              <a href="${paymentLink}"
+                 style="${emailStyles.button};background-color:#2196f3;">
+                Make Payment Now
+              </a>
+              <p style="margin-top:10px;font-size:14px;color:#718096;">
+                Payment must be completed within 48 hours.
+              </p>
+            </div>`
+              : ""
+          }
+          <div style="${emailStyles.highlightBox}">
+            <h3 style="${emailStyles.subHeading}">Your Registration Details</h3>
+            <div style="${emailStyles.list}">
+              <div style="${emailStyles.listItem}">
                 <strong>Program:</strong> ${eventName}
               </div>
-            </div>
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
+              <div style="${emailStyles.listItem}">
                 <strong>Date:</strong> ${eventDate}
               </div>
+              ${
+                registration.timeslot
+                  ? `<div style="${emailStyles.listItem}">
+                       <strong>Time Slot:</strong> ${registration.timeslot}
+                     </div>`
+                  : ""
+              }
             </div>
-            ${
-              registration.timeslot
-                ? `
-            <div style="${emailStyles.listItem}">
-              <div style="${emailStyles.field}">
-                <strong>Time Slot:</strong> ${registration.timeslot}
-              </div>
-            </div>
-            `
-                : ""
-            }
+          </div>
+          <p style="font-size:16px;">
+            For questions, contact 
+            <a href="mailto:connect@ekaausa.com" style="color:#667eea;text-decoration:none;">
+              connect@ekaausa.com
+            </a>
+          </p>
+          <div style="text-align:center;margin-top:30px;">
+            <a href="https://ekaausa.com" style="${emailStyles.button};">
+              Visit Our Website
+            </a>
           </div>
         </div>
-        
-        <p style="font-size: 16px;">
-          For questions, contact <a href="mailto:connect@ekaausa.com" style="color: #667eea; text-decoration: none;">
-            connect@ekaausa.com
-          </a>
-        </p>
-        
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="https://ekaausa.com" style="${emailStyles.button}">
-            Visit Our Website
-          </a>
+        <div style="${emailStyles.footer}">
+          EKAA Learning Center &copy; ${new Date().getFullYear()}
         </div>
       </div>
-      
-      <div style="${emailStyles.footer}">
-        EKAA Learning Center &copy; ${new Date().getFullYear()}
-      </div>
-    </div>
     `;
   },
 };
@@ -940,18 +918,19 @@ const emailStyles = {
   container:
     "font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);",
   header:
-    "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; text-align: center;",
+    "background: linear-gradient(135deg, #ba82c5 0%, #6e2d79 100%); color: white; padding: 25px; text-align: center;",
   content: "padding: 30px; line-height: 1.6; color: #333333;",
   footer:
     "text-align: center; padding: 20px; color: #777777; font-size: 14px; border-top: 1px solid #eeeeee; background: #f8f9fa;",
   field:
-    "margin: 15px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 5px;",
+    "margin: 15px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #ba82c5; border-radius: 5px;",
   highlightBox:
-    "background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #c5e1ff;",
+    "background: #f6e8f6; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #d1b2d4;",
   heading: "color: #2c3e50; margin-top: 0;",
   subHeading: "color: #2c3e50; margin-bottom: 15px; font-weight: 600;",
   button:
-    "display: inline-block; background: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;",
+    "display: inline-block; background: #6e2d79; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;",
   list: "padding-left: 20px; margin: 15px 0;",
   listItem: "margin-bottom: 10px;",
 };
+

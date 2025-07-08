@@ -23,14 +23,14 @@ const registrationValidation = [
   body('currentAddress').notEmpty().withMessage('Current address is required'),
   body('permanenetAddress').notEmpty().withMessage('Permanent address is required'),
   body('city').notEmpty().withMessage('City is required'),
-  body('timeslot').notEmpty().withMessage('Timeslot is required'),
+  // body('timeslot').notEmpty().withMessage('Timeslot is required'),
   body('mobileNo').notEmpty().isMobilePhone().withMessage('Valid mobile number is required'),
   body('email').notEmpty().isEmail().withMessage('Valid email is required'),
   body('dob').notEmpty().isISO8601().toDate().withMessage('Valid date of birth is required'),
   body('occupation').notEmpty().withMessage('Occupation is required'),
   // body('courseDetailDate').notEmpty().isISO8601().toDate().withMessage('Valid course date is required'),
   // body('courseDetailTime').notEmpty().withMessage('Course time is required'),
-  body('courseDetailVenue').notEmpty().withMessage('Course venue is required'),
+  // body('courseDetailVenue').notEmpty().withMessage('Course venue is required'),
   // body('communicationPreferences').isBoolean().withMessage('Communication preference must be true or false'),
   // body('termsandcondition').isBoolean().custom(val => val === true).withMessage('Terms and conditions must be accepted'),
   body('levelName').notEmpty().withMessage('Level name is required'),
@@ -45,7 +45,7 @@ router.post('/',
   registrationValidation,
   (req, res, next) => {
     // Check for file uploads
-    if (!req.files || !req.files.idPhotofront || !req.files.idphotoback || !req.files.profileImage) {
+    if (!req.files || !req.files.idPhotofront || !req.files.profileImage) {
       return res.status(422).json({ success: false, errors: [{ msg: 'Both ID photo front and back are required.' }] });
     }
     const errors = validationResult(req);

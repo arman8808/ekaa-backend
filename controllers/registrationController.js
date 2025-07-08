@@ -3,11 +3,19 @@ const {
   sendRegistrationEmail,
   sendUserConfirmationEmail,
 } = require(".././utils/mailer");
-
+const EVENT_DOCTOR_MAP = {
+  "Decode The Child": "Dr Aiyasawmy's A/C",
+  "L 1": "Dr. Sonia Gupte",
+};
+const PAYMENT_LINK_MAP = {
+  // "Dr Manoj's A/C": "https://buy.stripe.com/xxxx_for_manoj",
+  "Dr Aiyasawmy's A/C": "https://buy.stripe.com/6oU6ozgGsc45cfCgYj93y02",
+  "Dr. Sonia Gupte": "https://buy.stripe.com/14A3cxdvCbBn8qU32O7Vm0z",
+};
 exports.createRegistration = async (req, res) => {
   try {
     const idPhotofrontPath = req.files.idPhotofront[0].path;
-    const idphotobackPath = req.files.idphotoback[0].path;
+    const idphotobackPath = req.files.idphotoback?.[0]?.path;
     const profilePhotoPath = req.files.profileImage[0].path;
 
     const registrationData = {
@@ -22,7 +30,15 @@ exports.createRegistration = async (req, res) => {
 
     // Send notification email to admin
     await sendRegistrationEmail(registration);
-    await sendUserConfirmationEmail(registration);
+
+    // determine payment link for user
+    const cityParts = registration.city?.split("|") || [];
+    const eventName = cityParts[1]?.trim();
+    const doctorKey = EVENT_DOCTOR_MAP[eventName];
+    const paymentLink =
+      PAYMENT_LINK_MAP[doctorKey] || "https://buy.stripe.com/default_link";
+
+    await sendUserConfirmationEmail(registration, paymentLink);
 
     res.status(201).json({
       success: true,
@@ -30,6 +46,8 @@ exports.createRegistration = async (req, res) => {
       data: registration,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(400).json({
       success: false,
       message: "Registration failed. Please check your input and try again.",
