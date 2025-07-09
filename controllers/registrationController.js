@@ -35,9 +35,11 @@ exports.createRegistration = async (req, res) => {
     const cityParts = registration.city?.split("|") || [];
     const eventName = cityParts[1]?.trim();
     const doctorKey = EVENT_DOCTOR_MAP[eventName];
+    console.log(doctorKey);
+    
     const paymentLink =
       PAYMENT_LINK_MAP[doctorKey] || "https://buy.stripe.com/default_link";
-
+   console.log(doctorKey,paymentLink);
     await sendUserConfirmationEmail(registration, paymentLink);
 
     res.status(201).json({

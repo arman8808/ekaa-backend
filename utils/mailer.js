@@ -238,7 +238,7 @@ const generateClientEmailTemplate = (data) => {
         <p>Thank you for contacting us. We will be in touch soon to help take your journey forward.</p>
       </div>
       <div style="${emailStyles.footer}">
-        <p>For immediate assistance, contact us at <a href="mailto:connect@ekaausa.com" style="color: #667eea; text-decoration: none;">connect@ekaausa.com</a></p>
+        <p>For immediate assistance, contact us at <a href="mailto:connect@ekaausa.com" style="color: #6e2d79; text-decoration: none;">connect@ekaausa.com</a></p>
         <p>EKAA Support Team &copy; ${new Date().getFullYear()}</p>
       </div>
     </div>
@@ -347,11 +347,11 @@ const emailTemplates = {
         ${
           needsPayment
             ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Complete Your Registration</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">Please complete your payment to secure your spot:</p>
             <a href="https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01" 
-               style="${emailStyles.button}; background-color: #4caf50; display: inline-block;">
+               style="${emailStyles.button}; background-color: #6e2d79; display: inline-block;">
               Make Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">Payment must be completed within 48 hours.</p>
@@ -386,7 +386,7 @@ const emailTemplates = {
           </div>
         </div>
         
-        <p style="font-size: 16px;">If you have any questions, please contact us at <a href="mailto:contact@ekaausa.com" style="color: #667eea; text-decoration: none; font-weight: bold;">contact@ekaausa.com</a>.</p>
+        <p style="font-size: 16px;">If you have any questions, please contact us at <a href="mailto:contact@ekaausa.com" style="color: #6e2d79; text-decoration: none; font-weight: bold;">contact@ekaausa.com</a>.</p>
         
         <div style="text-align: center; margin-top: 30px;">
           <a href="https://ekaausa.com" style="${emailStyles.button}">
@@ -514,7 +514,7 @@ const ichEmailTemplates = {
         ${
           isManojTraining
             ? `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fff8e1; border-radius: 8px; border-left: 4px solid #ffc107;">
+        <div style="margin: 20px 0; padding: 15px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
           <p style="margin: 0; font-size: 15px;">
             <strong>Note:</strong> Dr. Manoj has been CC'd on this notification as the instructor.
           </p>
@@ -542,10 +542,8 @@ const ichEmailTemplates = {
 
   userConfirmation: (registration, paymentLink) => {
     const cityParts = registration.city?.split("|") || [];
-    const eventName = cityParts[1]?.trim() || "EKAA Program";
-    const eventDate = cityParts[2]?.trim() || "";
-    const hasDoctor = !!EVENT_DOCTOR_MAP[eventName];
-
+    const trainingType = cityParts[1]?.trim() || "ICH Training";
+    const trainingDates = cityParts[2]?.trim() || "";
     const isL1 = trainingType.includes("ICH L1 Training");
     const isL3 = trainingType.includes("ICH L3 Training");
 
@@ -561,16 +559,14 @@ const ichEmailTemplates = {
       </div>
       
       <div style="${emailStyles.content}">
-        <p style="font-size: 16px;">Dear ${registration.firstName} ${
-      registration.lastName
-    },</p>
+        <p style="font-size: 16px;">Dear ${registration.firstName} ${registration.lastName},</p>
         
         <p style="font-size: 16px;">Thank you for registering for our <strong>${trainingType}</strong> program!</p>
         
         ${
           isL1
             ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L1 Training Details</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Your training will be conducted by Dr. Manoj Bhardwaj from ${trainingDates}.
@@ -579,7 +575,7 @@ const ichEmailTemplates = {
               Please complete your payment to secure your spot:
             </p>
             <a href="${paymentLinks.l1}" 
-               style="${emailStyles.button}; background-color: #2196f3;">
+               style="${emailStyles.button}; background-color: #6e2d79;">
               Make L1 Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
@@ -593,7 +589,7 @@ const ichEmailTemplates = {
         ${
           isL3
             ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
+          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L3 Training Details</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Your training will be conducted by Dr. Manoj Bhardwaj from ${trainingDates}.
@@ -605,7 +601,7 @@ const ichEmailTemplates = {
               Please complete your payment to secure your spot:
             </p>
             <a href="${paymentLinks.l3}" 
-               style="${emailStyles.button}; background-color: #4caf50;">
+               style="${emailStyles.button}; background-color: #6e2d79;">
               Make L3 Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
@@ -634,9 +630,7 @@ const ichEmailTemplates = {
             </div>
             <div style="${emailStyles.listItem}">
               <div style="${emailStyles.field}">
-                <strong>Name on Certificate:</strong> ${
-                  registration.nameAsCertificate
-                }
+                <strong>Name on Certificate:</strong> ${registration.nameAsCertificate}
               </div>
             </div>
             ${
@@ -655,7 +649,7 @@ const ichEmailTemplates = {
         
         <p style="font-size: 16px;">
           If you have any questions, please contact us at 
-          <a href="mailto:contact@ekaausa.com" style="color: #667eea; text-decoration: none;">
+          <a href="mailto:contact@ekaausa.com" style="color: #6e2d79; text-decoration: none;">
             contact@ekaausa.com
           </a>.
         </p>
@@ -771,9 +765,9 @@ const decodeEmailTemplates = {
           </div>
           ${
             doctorKey
-              ? `<div style="margin:20px 0;padding:15px;background-color:#fff8e1;border-radius:8px;border-left:4px solid #ffc107;">
+              ? `<div style="margin:20px 0;padding:15px;background-color:#f6e8f6;border-radius:8px;border-left:4px solid #ba82c5;">
                    <p style="margin:0;font-size:15px;">
-                     <strong>Note:</strong> ${doctorKey} has been CC’d on this notification.
+                     <strong>Note:</strong> ${doctorKey} has been CC'd on this notification.
                    </p>
                  </div>`
               : ""
@@ -807,7 +801,7 @@ const decodeEmailTemplates = {
           ${
             hasDoctor
               ? `
-            <div style="margin:20px 0;padding:20px;background-color:#e3f2fd;border-radius:8px;border-left:4px solid #2196f3;">
+            <div style="margin:20px 0;padding:20px;background-color:#f6e8f6;border-radius:8px;border-left:4px solid #ba82c5;">
               <p style="margin:0 0 15px 0;font-size:16px;">
                 Your session is scheduled on ${eventDate}.
               </p>
@@ -815,7 +809,7 @@ const decodeEmailTemplates = {
                 Please complete your payment to confirm your spot:
               </p>
               <a href="${paymentLink}"
-                 style="${emailStyles.button};background-color:#2196f3;">
+                 style="${emailStyles.button};background-color:#6e2d79;">
                 Make Payment Now
               </a>
               <p style="margin-top:10px;font-size:14px;color:#718096;">
@@ -844,7 +838,7 @@ const decodeEmailTemplates = {
           </div>
           <p style="font-size:16px;">
             For questions, contact 
-            <a href="mailto:connect@ekaausa.com" style="color:#667eea;text-decoration:none;">
+            <a href="mailto:connect@ekaausa.com" style="color:#6e2d79;text-decoration:none;">
               connect@ekaausa.com
             </a>
           </p>
@@ -887,7 +881,7 @@ const sendRegistrationEmail = async (registration) => {
   }
 };
 
-const sendUserConfirmationEmail = async (registration) => {
+const sendUserConfirmationEmail = async (registration,paymentLink) => {
   try {
     await transporter.sendMail({
       from: `"EKAA Programs" <${process.env.MAIL_USER}>`,
@@ -895,7 +889,7 @@ const sendUserConfirmationEmail = async (registration) => {
       subject: `Confirmation: ${
         registration.city?.split("|")[1]?.trim() || "EKAA Program"
       } Registration`,
-      html: decodeEmailTemplates.userConfirmation(registration),
+      html: decodeEmailTemplates.userConfirmation(registration,paymentLink),
       replyTo: "connect@ekaausa.com",
     });
   } catch (error) {
