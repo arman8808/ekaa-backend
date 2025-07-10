@@ -60,7 +60,7 @@ exports.createRegistration = async (req, res) => {
 
 exports.getRegistrations = async (req, res) => {
   try {
-    const registrations = await Registration.find();
+    const registrations = await Registration.find().sort({createdAt:-1});
     res.status(200).json({
       success: true,
       message: "Registrations fetched successfully.",
