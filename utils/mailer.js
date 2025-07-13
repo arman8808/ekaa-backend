@@ -326,7 +326,13 @@ const emailTemplates = {
 
   userConfirmation: (registration) => {
     // Check if payment is needed for these dates
-    const paymentDates = ["Aug 12, 2025", "Aug 18, 2025"];
+    const paymentDates = [
+      "Aug 12, 2025",
+      "Aug 18, 2025",
+      "Aug 22, 2025",
+      "Aug 23, 2025",
+      "Aug 28, 2025",
+    ];
     const needsPayment = paymentDates.includes(registration.date);
 
     return `
@@ -420,6 +426,12 @@ const sendRegistrationEmails = async (registration) => {
     };
 
     const needsPaymentLink = paymentLinks.hasOwnProperty(registration.date);
+    console.log(
+      registration.date,
+      "registration.date",
+      needsPaymentLink,
+      paymentLinks[registration.date]
+    );
     const paymentLink = needsPaymentLink
       ? paymentLinks[registration.date]
       : null;
@@ -428,14 +440,14 @@ const sendRegistrationEmails = async (registration) => {
       ...registration,
       paymentLink: paymentLink,
     };
-    await transporter.sendMail({
-      from: `"Ekaa USA Registrations" <${process.env.EMAIL_USER}>`,
-      to: "contact@ekaausa.com",
-      cc: ["connect@ekaausa.com", registration.organiserEmail],
-      subject: `New Registration: ${registration.event} - ${registration.date}`,
-      html: emailTemplates.internalNotification(registration),
-      replyTo: "contact@ekaausa.com",
-    });
+    // await transporter.sendMail({
+    //   from: `"Ekaa USA Registrations" <${process.env.EMAIL_USER}>`,
+    //   to: "contact@ekaausa.com",
+    //   cc: ["connect@ekaausa.com", registration.organiserEmail],
+    //   subject: `New Registration: ${registration.event} - ${registration.date}`,
+    //   html: emailTemplates.internalNotification(registration),
+    //   replyTo: "contact@ekaausa.com",
+    // });
 
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
@@ -559,7 +571,9 @@ const ichEmailTemplates = {
       </div>
       
       <div style="${emailStyles.content}">
-        <p style="font-size: 16px;">Dear ${registration.firstName} ${registration.lastName},</p>
+        <p style="font-size: 16px;">Dear ${registration.firstName} ${
+      registration.lastName
+    },</p>
         
         <p style="font-size: 16px;">Thank you for registering for our <strong>${trainingType}</strong> program!</p>
         
@@ -630,7 +644,9 @@ const ichEmailTemplates = {
             </div>
             <div style="${emailStyles.listItem}">
               <div style="${emailStyles.field}">
-                <strong>Name on Certificate:</strong> ${registration.nameAsCertificate}
+                <strong>Name on Certificate:</strong> ${
+                  registration.nameAsCertificate
+                }
               </div>
             </div>
             ${
@@ -730,9 +746,9 @@ const sendICHAdminNotification = async ({
 const decodeEmailTemplates = {
   adminNotification: (registration) => {
     const cityParts = registration.city?.split("|") || [];
-    const eventName  = cityParts[1]?.trim() || "EKAA Program";
-    const eventDate  = cityParts[2]?.trim() || "";
-    const doctorKey  = EVENT_DOCTOR_MAP[eventName];
+    const eventName = cityParts[1]?.trim() || "EKAA Program";
+    const eventDate = cityParts[2]?.trim() || "";
+    const doctorKey = EVENT_DOCTOR_MAP[eventName];
     const isDecodeChild = eventName.includes("Decode The Child");
 
     return `
@@ -747,7 +763,9 @@ const decodeEmailTemplates = {
             <h3 style="${emailStyles.subHeading}">Registrant Information</h3>
             <div style="${emailStyles.list}">
               <div style="${emailStyles.listItem}">
-                <strong>Name:</strong> ${registration.firstName} ${registration.lastName}
+                <strong>Name:</strong> ${registration.firstName} ${
+      registration.lastName
+    }
               </div>
               <div style="${emailStyles.listItem}">
                 <strong>Email:</strong> ${registration.email}
@@ -881,7 +899,7 @@ const sendRegistrationEmail = async (registration) => {
   }
 };
 
-const sendUserConfirmationEmail = async (registration,paymentLink) => {
+const sendUserConfirmationEmail = async (registration, paymentLink) => {
   try {
     await transporter.sendMail({
       from: `"EKAA Programs" <${process.env.MAIL_USER}>`,
@@ -889,7 +907,7 @@ const sendUserConfirmationEmail = async (registration,paymentLink) => {
       subject: `Confirmation: ${
         registration.city?.split("|")[1]?.trim() || "EKAA Program"
       } Registration`,
-      html: decodeEmailTemplates.userConfirmation(registration,paymentLink),
+      html: decodeEmailTemplates.userConfirmation(registration, paymentLink),
       replyTo: "connect@ekaausa.com",
     });
   } catch (error) {
@@ -927,4 +945,3 @@ const emailStyles = {
   list: "padding-left: 20px; margin: 15px 0;",
   listItem: "margin-bottom: 10px;",
 };
-
