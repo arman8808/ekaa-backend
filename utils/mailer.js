@@ -426,12 +426,6 @@ const sendRegistrationEmails = async (registration) => {
     };
 
     const needsPaymentLink = paymentLinks.hasOwnProperty(registration.date);
-    console.log(
-      registration.date,
-      "registration.date",
-      needsPaymentLink,
-      paymentLinks[registration.date]
-    );
     const paymentLink = needsPaymentLink
       ? paymentLinks[registration.date]
       : null;
