@@ -17,7 +17,6 @@ exports.submitICHRegistration = async (req, res) => {
       idPhotofront: req.files?.frontImage?.[0]?.path,
       idphotoback: req.files?.backImage?.[0]?.path,
     };
-    console.log(files);
 
     // Create ICH registration document
     const ichRegistration = new ICHRegistration({
@@ -35,12 +34,12 @@ exports.submitICHRegistration = async (req, res) => {
       registration: ichRegistration, // Pass the full registration object
     });
 
-    await sendICHAdminNotification({
-      userEmail: req.body.email,
-      userName: `${req.body.firstName} ${req.body.lastName}`,
-      registrationId: ichRegistration._id,
-      city: req.body.city,
-    });
+    // await sendICHAdminNotification({
+    //   userEmail: req.body.email,
+    //   userName: `${req.body.firstName} ${req.body.lastName}`,
+    //   registrationId: ichRegistration._id,
+    //   city: req.body.city,
+    // });
 
     res.status(201).json({
       success: true,

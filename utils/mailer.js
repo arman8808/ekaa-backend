@@ -550,12 +550,102 @@ const ichEmailTemplates = {
     const cityParts = registration.city?.split("|") || [];
     const trainingType = cityParts[1]?.trim() || "ICH Training";
     const trainingDates = cityParts[2]?.trim() || "";
-    const isL1 = trainingType.includes("ICH L1 Training");
-    const isL3 = trainingType.includes("ICH L3 Training");
+
+    const isL1 =
+      trainingType.includes("ICH L1 Training") ||
+      trainingType.includes("Basic Course");
+    const isL2 =
+      trainingType.includes("ICH L2 Training") ||
+      trainingType.includes("Behavioral Resolutions");
+    const isL3 =
+      trainingType.includes("ICH L3 Training") ||
+      trainingType.includes("Health Resolutions");
+
+    const sessions = [
+      {
+        id: 1,
+        Event:
+          "Advanced Course in Integrated Hypnotic Modalities for Health Resolutions",
+        Date: "13th-17th Aug",
+        Location: "Houston",
+        organisedby: "Dr Aiyasawmy's A/C",
+        level: 3,
+      },
+      {
+        id: 4,
+        Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
+        Date: "11th Aug-12th Aug",
+        Location: "Houston TX",
+        organisedby: "Dr.Aiyasawmy",
+        level: 1,
+      },
+      {
+        id: 2,
+        Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
+        Date: "Aug 20-21, 2025",
+        Location: "Austin",
+        organisedby: "Dr Manoj's",
+        level: 1,
+      },
+      {
+        id: 3,
+        Event:
+          "Course in Integrated Hypnotic Modalities for Behavioral Resolutions.",
+        Date: "13th–17th Aug",
+        Location: "Houston TX",
+        organisedby: "Dr.Sonia Gupte",
+        level: 2,
+      },
+    ];
+
+    const normalizeDate = (dateStr) => {
+      if (!dateStr) return "";
+      return dateStr
+        .replace(/–/g, "-") 
+        .replace(/th|rd|nd|st/g, "") 
+        .replace(/\s+/g, "") 
+        .toLowerCase();
+    };
+
+    const matchingSession = sessions.find((session) => {
+      const sessionDateNormalized = normalizeDate(session.Date);
+      const trainingDateNormalized = normalizeDate(trainingDates);
+
+      const datesMatch =
+        sessionDateNormalized.includes(trainingDateNormalized) ||
+        trainingDateNormalized.includes(sessionDateNormalized);
+
+      const levelMatch =
+        (isL1 && session.level === 1) ||
+        (isL2 && session.level === 2) ||
+        (isL3 && session.level === 3);
+
+      return datesMatch && levelMatch;
+    });
+
+    const instructorName = matchingSession?.organisedby || "Dr. Manoj Bhardwaj";
 
     const paymentLinks = {
-      l1: "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
-      l3: "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
+      l1: {
+        "Aug 20-21, 2025":
+          "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
+        "11th Aug-12th Aug": "https://buy.stripe.com/3cI5kv9e03xz7ZmdM793y04",
+        default:
+          "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
+      },
+      l2: {
+        "13th–17th Aug": "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
+        default: "https://example.com/l2-default",
+      },
+      l3: {
+        "Aug 13-17, 2025": "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
+        default: "https://example.com/l3-default",
+      },
+    };
+
+    const getPaymentLink = (level) => {
+      const levelLinks = paymentLinks[level];
+      return levelLinks[trainingDates] || levelLinks.default;
     };
 
     return `
@@ -577,14 +667,37 @@ const ichEmailTemplates = {
           <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L1 Training Details</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Your training will be conducted by Dr. Manoj Bhardwaj from ${trainingDates}.
+              Your training will be conducted by ${instructorName} from ${trainingDates}.
             </p>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Please complete your payment to secure your spot:
             </p>
-            <a href="${paymentLinks.l1}" 
+            <a href="${getPaymentLink("l1")}" 
                style="${emailStyles.button}; background-color: #6e2d79;">
               Make L1 Payment Now
+            </a>
+            <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
+              Payment must be completed within 48 hours.
+            </p>
+          </div>
+        `
+            : ""
+        }
+        
+        ${
+          isL2
+            ? `
+          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
+            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L2 Training Details</h3>
+            <p style="margin: 0 0 15px 0; font-size: 16px;">
+              Your training will be conducted by ${instructorName} from ${trainingDates}.
+            </p>
+            <p style="margin: 0 0 15px 0; font-size: 16px;">
+              Please complete your payment to secure your spot:
+            </p>
+            <a href="${getPaymentLink("l2")}" 
+               style="${emailStyles.button}; background-color: #6e2d79;">
+              Make L2 Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
               Payment must be completed within 48 hours.
@@ -600,24 +713,18 @@ const ichEmailTemplates = {
           <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L3 Training Details</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Your training will be conducted by Dr. Manoj Bhardwaj from ${trainingDates}.
+              Your training will be conducted by ${instructorName} from ${trainingDates}.
             </p>
-            ${
-              paymentLinks.l3
-                ? `
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Please complete your payment to secure your spot:
             </p>
-            <a href="${paymentLinks.l3}" 
+            <a href="${getPaymentLink("l3")}" 
                style="${emailStyles.button}; background-color: #6e2d79;">
               Make L3 Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
               Payment must be completed within 48 hours.
             </p>
-            `
-                : ""
-            }
           </div>
         `
             : ""
@@ -634,6 +741,11 @@ const ichEmailTemplates = {
             <div style="${emailStyles.listItem}">
               <div style="${emailStyles.field}">
                 <strong>Dates:</strong> ${trainingDates}
+              </div>
+            </div>
+            <div style="${emailStyles.listItem}">
+              <div style="${emailStyles.field}">
+                <strong>Instructor:</strong> ${instructorName}
               </div>
             </div>
             <div style="${emailStyles.listItem}">
