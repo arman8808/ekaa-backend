@@ -34,16 +34,16 @@ exports.submitICHRegistration = async (req, res) => {
       registration: ichRegistration, // Pass the full registration object
     });
 
-    // await sendICHAdminNotification({
-    //   userEmail: req.body.email,
-    //   userName: `${req.body.firstName} ${req.body.lastName}`,
-    //   registrationId: ichRegistration._id,
-    //   city: req.body.city,
-    // });
+    await sendICHAdminNotification({
+      userEmail: req.body.email,
+      userName: `${req.body.firstName} ${req.body.lastName}`,
+      registrationId: ichRegistration._id,
+      city: req.body.city,
+    });
 
     res.status(201).json({
       success: true,
-      message: "ICH Registration submitted successfully!",
+      message: "Hypnotherapy Registration submitted successfully!",
       data: {
         id: ichRegistration._id,
         userEmailSent: true,
@@ -51,7 +51,7 @@ exports.submitICHRegistration = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("ICH Registration error:", error);
+    console.error("Hypnotherapy Registration error:", error);
 
     // Handle Multer errors
     if (error.name === "MulterError") {
@@ -63,7 +63,7 @@ exports.submitICHRegistration = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to submit ICH registration",
+      message: error.message || "Failed to submit Hypnotherapy registration",
     });
   }
 };
@@ -125,10 +125,10 @@ exports.getAllICHRegistrations = async (req, res) => {
       data: registrations,
     });
   } catch (error) {
-    console.error("Get all ICH registrations error:", error);
+    console.error("Get all Hypnotherapy registrations error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch ICH registrations",
+      message: error.message || "Failed to fetch Hypnotherapy registrations",
     });
   }
 };
@@ -143,7 +143,7 @@ exports.getOneICHRegistration = async (req, res) => {
     if (!registration) {
       return res.status(404).json({
         success: false,
-        message: "ICH registration not found",
+        message: "Hypnotherapy registration not found",
       });
     }
 
@@ -152,7 +152,7 @@ exports.getOneICHRegistration = async (req, res) => {
       data: registration,
     });
   } catch (error) {
-    console.error("Get ICH registration error:", error);
+    console.error("Get Hypnotherapy  registration error:", error);
 
     if (error.name === "CastError") {
       return res.status(400).json({
@@ -163,7 +163,7 @@ exports.getOneICHRegistration = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch ICH registration",
+      message: error.message || "Failed to fetch Hypnotherapy  registration",
     });
   }
 };

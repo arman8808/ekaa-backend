@@ -327,11 +327,14 @@ const emailTemplates = {
   userConfirmation: (registration) => {
     // Check if payment is needed for these dates
     const paymentDates = [
+      "Aug 9, 2025",
       "Aug 12, 2025",
       "Aug 18, 2025",
       "Aug 22, 2025",
       "Aug 23, 2025",
       "Aug 28, 2025",
+      "Aug 29, 2025",
+      "Sept 7, 2025",
     ];
     const needsPayment = paymentDates.includes(registration.date);
 
@@ -415,6 +418,7 @@ const emailTemplates = {
 const sendRegistrationEmails = async (registration) => {
   try {
     const paymentLinks = {
+      "Aug 9, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
       "Aug 12, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
       "Aug 18, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
       "Aug 22, 2025":
@@ -422,6 +426,10 @@ const sendRegistrationEmails = async (registration) => {
       "Aug 23, 2025":
         "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
       "Aug 28, 2025":
+        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
+      "Aug 29, 2025":
+        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
+      "Sept 7, 2025":
         "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
     };
 
@@ -434,14 +442,14 @@ const sendRegistrationEmails = async (registration) => {
       ...registration,
       paymentLink: paymentLink,
     };
-    // await transporter.sendMail({
-    //   from: `"Ekaa USA Registrations" <${process.env.EMAIL_USER}>`,
-    //   to: "contact@ekaausa.com",
-    //   cc: ["connect@ekaausa.com", registration.organiserEmail],
-    //   subject: `New Registration: ${registration.event} - ${registration.date}`,
-    //   html: emailTemplates.internalNotification(registration),
-    //   replyTo: "contact@ekaausa.com",
-    // });
+    await transporter.sendMail({
+      from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
+      to: "contact@ekaausa.com",
+      cc: ["connect@ekaausa.com", registration.organiserEmail],
+      subject: `New Registration: ${registration.event} - ${registration.date}`,
+      html: emailTemplates.internalNotification(registration),
+      replyTo: "contact@ekaausa.com",
+    });
 
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
@@ -481,7 +489,7 @@ const ichEmailTemplates = {
     return `
     <div style="${emailStyles.container}">
       <div style="${emailStyles.header}">
-        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">New ICH Registration</h2>
+        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">New Hypnotherapy Registration</h2>
       </div>
       
       <div style="${emailStyles.content}">
@@ -601,9 +609,9 @@ const ichEmailTemplates = {
     const normalizeDate = (dateStr) => {
       if (!dateStr) return "";
       return dateStr
-        .replace(/–/g, "-") 
-        .replace(/th|rd|nd|st/g, "") 
-        .replace(/\s+/g, "") 
+        .replace(/–/g, "-")
+        .replace(/th|rd|nd|st/g, "")
+        .replace(/\s+/g, "")
         .toLowerCase();
     };
 
@@ -651,7 +659,7 @@ const ichEmailTemplates = {
     return `
     <div style="${emailStyles.container}">
       <div style="${emailStyles.header}">
-        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">ICH Registration Confirmation</h2>
+        <h2 style="margin: 0; font-weight: 500; font-size: 1.8rem;">Hypnotherapy Registration Confirmation</h2>
       </div>
       
       <div style="${emailStyles.content}">
@@ -784,12 +792,12 @@ const ichEmailTemplates = {
         
         <p style="font-size: 16px; margin-top: 40px;">
           Best regards,<br>
-          <strong>The Ekaa USA ICH Team</strong>
+          <strong>The Ekaa USA Hypnotherapy Team</strong>
         </p>
       </div>
       
       <div style="${emailStyles.footer}">
-        Ekaa USA ICH Program &bull; contact@ekaausa.com &bull; www.ekaausa.com/ich
+        Ekaa USA Hypnotherapy Program &bull; contact@ekaausa.com &bull; www.ekaausa.com/ich
       </div>
     </div>
     `;
@@ -799,9 +807,9 @@ const ichEmailTemplates = {
 const sendICHUserConfirmation = async ({ email, name, registration }) => {
   try {
     await transporter.sendMail({
-      from: `"Ekaa USA ICH Program" <${process.env.EMAIL_USER}>`,
+      from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "ICH Registration Confirmation",
+      subject: "Hypnotherapy Registration Confirmation",
       html: ichEmailTemplates.userConfirmation(registration),
       replyTo: "contact@ekaausa.com",
     });
@@ -830,10 +838,10 @@ const sendICHAdminNotification = async ({
     }
 
     await transporter.sendMail({
-      from: `"Ekaa USA ICH Registrations" <${process.env.EMAIL_USER}>`,
+      from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: "contact@ekaausa.com",
       cc: cc,
-      subject: `New ICH Registration: ${userName}`,
+      subject: `New Hypnotherapy Registration: ${userName}`,
       html: ichEmailTemplates.adminNotification({
         userName,
         userEmail,
@@ -844,7 +852,7 @@ const sendICHAdminNotification = async ({
     });
     return true;
   } catch (error) {
-    console.error("ICH Admin email error:", error);
+    console.error("Hypnotherapy Admin email error:", error);
     return false;
   }
 };
@@ -991,7 +999,7 @@ const sendRegistrationEmail = async (registration) => {
     }
 
     await transporter.sendMail({
-      from: `"EKAA Registrations" <${process.env.MAIL_USER}>`,
+      from: `"EKAA USA" <${process.env.MAIL_USER}>`,
       to: process.env.ADMIN_EMAIL,
       cc: cc,
       subject: `New Registration: ${
@@ -1008,7 +1016,7 @@ const sendRegistrationEmail = async (registration) => {
 const sendUserConfirmationEmail = async (registration, paymentLink) => {
   try {
     await transporter.sendMail({
-      from: `"EKAA Programs" <${process.env.MAIL_USER}>`,
+      from: `"EKAA USA" <${process.env.MAIL_USER}>`,
       to: registration.email,
       subject: `Confirmation: ${
         registration.city?.split("|")[1]?.trim() || "EKAA Program"
