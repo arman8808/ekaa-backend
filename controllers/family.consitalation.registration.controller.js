@@ -4,9 +4,9 @@ const { sendRegistrationEmails } = require("../utils/mailer");
 
 // Doctor email mapping
 const DOCTOR_EMAIL_MAP = {
-  "Dr Aiyasawmy's A/C": "Aiyasawmy@gmail.com",
-  "Dr Manoj's A/C": "docbhardwaj@gmail.com",
-  "Dr. Sonia Gupte": "Sonia@enso-nia.com",
+  "Dr Aiyasawmy's": "Aiyasawmy@gmail.com",
+  "Dr Manoj's": "docbhardwaj@gmail.com",
+  "Dr. Sonia Gupte's": "Sonia@enso-nia.com",
 };
 
 
