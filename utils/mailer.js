@@ -483,6 +483,9 @@ const ichEmailTemplates = {
   adminNotification: ({ userName, userEmail, registrationId, city }) => {
     const isManojTraining =
       city.includes("ICH L3 Training") || city.includes("ICH L1 Training");
+    const displayCity = isManojTraining
+      ? city.replace(/ICH (L[13] Training)/g, "Hypnotic $1")
+      : city;
     const trainingType = city.split("|")[1]?.trim() || "ICH Training";
     const trainingDates = city.split("|")[2]?.trim() || "";
 
@@ -526,7 +529,7 @@ const ichEmailTemplates = {
         </div>
         
         ${
-          isManojTraining
+          displayCity
             ? `
         <div style="margin: 20px 0; padding: 15px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
           <p style="margin: 0; font-size: 15px;">
@@ -576,7 +579,7 @@ const ichEmailTemplates = {
           "Advanced Course in Integrated Hypnotic Modalities for Health Resolutions",
         Date: "13th-17th Aug",
         Location: "Houston",
-        organisedby: "Dr Aiyasawmy's A/C",
+        organisedby: "Dr Aiyasawmy's",
         level: 3,
       },
       {
@@ -584,7 +587,7 @@ const ichEmailTemplates = {
         Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
         Date: "11th Aug-12th Aug",
         Location: "Houston TX",
-        organisedby: "Dr.Aiyasawmy",
+        organisedby: "Dr Manoj's",
         level: 1,
       },
       {
