@@ -559,17 +559,17 @@ const ichEmailTemplates = {
 
   userConfirmation: (registration, paymentLink) => {
     const cityParts = registration.city?.split("|") || [];
-    const trainingType = cityParts[1]?.trim() || "ICH Training";
+    const trainingType = cityParts[1]?.trim() || "Hypnotherapy Training";
     const trainingDates = cityParts[2]?.trim() || "";
 
     const isL1 =
-      trainingType.includes("ICH L1 Training") ||
+      trainingType.includes("Hypnotherapy L1 Training") ||
       trainingType.includes("Basic Course");
     const isL2 =
-      trainingType.includes("ICH L2 Training") ||
+      trainingType.includes("Hypnotherapy L2 Training") ||
       trainingType.includes("Behavioral Resolutions");
     const isL3 =
-      trainingType.includes("ICH L3 Training") ||
+      trainingType.includes("Hypnotherapy L3 Training") ||
       trainingType.includes("Health Resolutions");
 
     const sessions = [
