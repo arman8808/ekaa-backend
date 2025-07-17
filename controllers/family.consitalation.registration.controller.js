@@ -23,7 +23,7 @@ exports.createRegistration = async (req, res) => {
       date: session.Date,
       location: session.Location,
       organisedBy: session.organisedby,
-      organiserEmail: doctorEmail,
+      organiserEmail: session.organiserEmail,
       fullName,
       email,
       phone,
