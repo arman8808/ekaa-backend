@@ -4,7 +4,7 @@ const registrationController = require('../controllers/family.consitalation.regi
 
 router.get('/', registrationController.getAllRegistrations);
 router.post('/register', registrationController.createRegistration);
-
-// GET: Get a single ICH registration by ID
+router.get('/download-csv', registrationController.downloadRegistrationsCSV); 
 router.get('/:id', registrationController.getRegistrationById);
+
 module.exports = router;

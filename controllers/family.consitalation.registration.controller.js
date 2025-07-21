@@ -130,3 +130,85 @@ exports.getRegistrationById = async (req, res) => {
     });
   }
 };
+exports.downloadRegistrationsCSV = async (req, res) => {
+  try {
+    // Date filter parameters
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+
+    // Build filter
+    const filter = {};
+    
+    // Add date filter if provided
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = startDate;
+      if (endDate) {
+        // Include the entire end date by setting to end of day
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = endOfDay;
+      }
+    }
+
+    // Search filter
+    const search = req.query.search || "";
+    if (search) {
+      filter.$or = [
+        { event: { $regex: search, $options: "i" } },
+        { organisedBy: { $regex: search, $options: "i" } },
+        { organiserEmail: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Get all registrations matching the filter
+    const registrations = await familyConsitalionRegistration.find(filter)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .lean();
+
+    if (registrations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No registrations found matching the criteria",
+      });
+    }
+
+    // Define CSV headers
+    const headers = [
+      'ID', 'Event', 'Date', 'Location', 'Organised By', 'Organiser Email',
+      'Full Name', 'Email', 'Phone', 'Registration Date'
+    ];
+
+    // Convert registrations to CSV rows
+    const rows = registrations.map(reg => [
+      reg._id,
+      `"${reg.event || ''}"`,
+      `"${reg.date || ''}"`,
+      `"${reg.location || ''}"`,
+      `"${reg.organisedBy || ''}"`,
+      `"${reg.organiserEmail || ''}"`,
+      `"${reg.fullName || ''}"`,
+      `"${reg.email || ''}"`,
+      `"${reg.phone || ''}"`,
+      `"${reg.createdAt.toISOString()}"`
+    ]);
+
+    // Combine headers and rows
+    const csvData = [headers, ...rows].map(row => row.join(',')).join('\n');
+
+    // Set response headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=family_consultation_registrations.csv');
+    
+    // Send the CSV data
+    res.status(200).send(csvData);
+
+  } catch (error) {
+    console.error("Download registrations CSV error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to generate CSV export",
+    });
+  }
+};

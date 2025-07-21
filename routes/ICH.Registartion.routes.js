@@ -9,7 +9,9 @@ router.post(
 );
 
 router.get('/', ichRegistrationController.getAllICHRegistrations);
-
-// GET: Get a single ICH registration by ID
+router.get(
+  '/download-csv', 
+  ichRegistrationController.downloadICHRegistrationsCSV
+);
 router.get('/:id', ichRegistrationController.getOneICHRegistration);
 module.exports = router;
