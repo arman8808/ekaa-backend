@@ -579,7 +579,7 @@ const ichEmailTemplates = {
           "Advanced Course in Integrated Hypnotic Modalities for Health Resolutions",
         Date: "13th-17th Aug",
         Location: "Houston",
-        organisedby: "Dr Aiyasawmy's",
+        organisedby: "Yuvraj Kapadia",
         level: 3,
       },
       {
@@ -587,7 +587,7 @@ const ichEmailTemplates = {
         Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
         Date: "11th Aug-12th Aug",
         Location: "Houston TX",
-        organisedby: "Dr Manoj's",
+        organisedby: "Dr. Manoj",
         level: 1,
       },
       {
@@ -595,7 +595,7 @@ const ichEmailTemplates = {
         Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
         Date: "Aug 20-21, 2025",
         Location: "Austin",
-        organisedby: "Dr Manoj's",
+        organisedby: "Dr. Manoj",
         level: 1,
       },
       {
@@ -612,9 +612,10 @@ const ichEmailTemplates = {
     const normalizeDate = (dateStr) => {
       if (!dateStr) return "";
       return dateStr
+        .replace(/th|rd|nd|st|,/g, "")
         .replace(/–/g, "-")
-        .replace(/th|rd|nd|st/g, "")
-        .replace(/\s+/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
         .toLowerCase();
     };
 
@@ -638,25 +639,37 @@ const ichEmailTemplates = {
 
     const paymentLinks = {
       l1: {
-        "Aug 20-21, 2025":
+        "20-21 aug 2025":
           "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
-        "11th Aug-12th Aug": "https://buy.stripe.com/3cI5kv9e03xz7ZmdM793y04",
+        "11 aug-12 aug": "https://buy.stripe.com/3cI5kv9e03xz7ZmdM793y04",
         default:
           "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
       },
       l2: {
-        "13th–17th Aug": "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
-        default: "https://example.com/l2-default",
+        "13-17 aug": "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
+        default: "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05", 
       },
       l3: {
-        "Aug 13-17, 2025": "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
-        default: "https://example.com/l3-default",
+        "13-17 aug": "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
+        default: "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
       },
     };
 
     const getPaymentLink = (level) => {
       const levelLinks = paymentLinks[level];
-      return levelLinks[trainingDates] || levelLinks.default;
+      const normalizedTrainingDates = normalizeDate(trainingDates);
+
+      // Try to find a matching date key
+      const foundKey = Object.keys(levelLinks).find((key) => {
+        if (key === "default") return false;
+        const normalizedKey = normalizeDate(key);
+        return (
+          normalizedTrainingDates.includes(normalizedKey) ||
+          normalizedKey.includes(normalizedTrainingDates)
+        );
+      });
+
+      return foundKey ? levelLinks[foundKey] : levelLinks.default;
     };
 
     return `
