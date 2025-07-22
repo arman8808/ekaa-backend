@@ -22,9 +22,9 @@ const registrationSchema = new mongoose.Schema(
     hearAbout: { type: String, trim: true },
     communicationPreferences: { type: Boolean, required: true },
     termsandcondition: { type: Boolean, required: true },
-    idPhotofront: { type: String, required: true },
+    idPhotofront: { type: String, required: false },
     idphotoback: { type: String },
-    profileImage: { type: String, required: true },
+    profileImage: { type: String, required: false },
     levelName: { type: String, required: true, trim: true },
   },
   { timestamps: true }

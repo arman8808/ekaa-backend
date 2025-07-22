@@ -330,6 +330,7 @@ const emailTemplates = {
       "Aug 9, 2025",
       "Aug 12, 2025",
       "Aug 18, 2025",
+      "Aug 20, 2025",
       "Aug 22, 2025",
       "Aug 23, 2025",
       "Aug 28, 2025",
@@ -421,6 +422,7 @@ const sendRegistrationEmails = async (registration) => {
       "Aug 9, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
       "Aug 12, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
       "Aug 18, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
+      "Aug 20, 2025": "https://buy.stripe.com/7sY00lfDKcFrcHa1YK7Vm0L",
       "Aug 22, 2025":
         "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
       "Aug 23, 2025":
@@ -434,6 +436,7 @@ const sendRegistrationEmails = async (registration) => {
     };
 
     const needsPaymentLink = paymentLinks.hasOwnProperty(registration.date);
+
     const paymentLink = needsPaymentLink
       ? paymentLinks[registration.date]
       : null;
@@ -647,7 +650,7 @@ const ichEmailTemplates = {
       },
       l2: {
         "13-17 aug": "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
-        default: "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05", 
+        default: "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
       },
       l3: {
         "13-17 aug": "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",

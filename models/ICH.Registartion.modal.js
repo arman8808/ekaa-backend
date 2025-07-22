@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ichRegistrationSchema = new mongoose.Schema(
   {
@@ -9,8 +9,8 @@ const ichRegistrationSchema = new mongoose.Schema(
     currentAddress: { type: String, required: true },
     permanenetAddress: { type: String, required: true },
     city: { type: String, required: true },
-    venue: { type: String,  },
-    timeslot: { type: String,  },
+    venue: { type: String },
+    timeslot: { type: String },
     TelNo: String,
     mobileNo: { type: String, required: true },
     email: { type: String, required: true },
@@ -26,13 +26,13 @@ const ichRegistrationSchema = new mongoose.Schema(
     levelName: String,
     level: String,
     profileImage: String,
-    idPhotofront: { type: String, required: true },
+    idPhotofront: { type: String, required: false },
     idphotoback: String,
   },
-  { 
+  {
     timestamps: true,
-    collection: 'ich_registrations'  // Explicit collection name
+    collection: "ich_registrations", // Explicit collection name
   }
 );
 
-module.exports = mongoose.model('ICHRegistration', ichRegistrationSchema);
+module.exports = mongoose.model("ICHRegistration", ichRegistrationSchema);
