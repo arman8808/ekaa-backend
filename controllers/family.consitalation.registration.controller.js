@@ -212,3 +212,32 @@ exports.downloadRegistrationsCSV = async (req, res) => {
     });
   }
 };
+exports.deleteRegistration = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const registration = await familyConsitalionRegistration.findById(id);
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: "Registration not found",
+      });
+    }
+
+    // Delete the registration
+    await familyConsitalionRegistration.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Registration deleted successfully",
+      deletedRegistration: registration
+    });
+  } catch (error) {
+    console.error("Delete registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete registration",
+      error: error.message,
+    });
+  }
+};

@@ -3,7 +3,6 @@ const {
   sendICHUserConfirmation,
   sendICHAdminNotification,
 } = require("../utils/mailer");
-// const { sendICHUserConfirmation, sendICHAdminNotification } = require('../services/ichEmailService');
 const DOCTOR_EMAIL_MAP = {
   "Dr Aiyasawmy's A/C": "Aiyasawmy@gmail.com",
   "Dr Manoj's A/C": "docbhardwaj@gmail.com",
@@ -169,15 +168,16 @@ exports.getOneICHRegistration = async (req, res) => {
 };
 exports.downloadICHRegistrationsCSV = async (req, res) => {
   try {
-    console.log('from ib=nside download');
+    console.log("from ib=nside download");
     // Date filter parameters
-    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate)
+      : null;
     const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
-
 
     // Build filter
     const filter = {};
-    
+
     // Add date filter if provided
     if (startDate || endDate) {
       filter.createdAt = {};
@@ -217,13 +217,24 @@ exports.downloadICHRegistrationsCSV = async (req, res) => {
 
     // Define CSV headers
     const headers = [
-      'ID', 'First Name', 'Last Name', 'Email', 'Mobile No', 'Gender',
-      'Date of Birth', 'Address', 'City', 'State', 'Country', 'Postal Code',
-      'Registration Date', 'Status'
+      "ID",
+      "First Name",
+      "Last Name",
+      "Email",
+      "Mobile No",
+      "Gender",
+      "Date of Birth",
+      "Address",
+      "City",
+      "State",
+      "Country",
+      "Postal Code",
+      "Registration Date",
+      "Status",
     ];
 
     // Convert registrations to CSV rows
-    const rows = registrations.map(reg => [
+    const rows = registrations.map((reg) => [
       reg._id,
       `"${reg.firstName}"`,
       `"${reg.lastName}"`,
@@ -237,24 +248,64 @@ exports.downloadICHRegistrationsCSV = async (req, res) => {
       `"${reg.country}"`,
       `"${reg.postalCode}"`,
       `"${reg.createdAt.toISOString()}"`,
-      `"${reg.status || 'pending'}"`
+      `"${reg.status || "pending"}"`,
     ]);
 
     // Combine headers and rows
-    const csvData = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const csvData = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
     // Set response headers for CSV download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=ich_registrations.csv');
-    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=ich_registrations.csv"
+    );
+
     // Send the CSV data
     res.status(200).send(csvData);
-
   } catch (error) {
     console.error("Download Hypnotherapy registrations CSV error:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Failed to generate CSV export",
+    });
+  }
+};
+// Delete a single ICH registration by ID
+exports.deleteICHRegistration = async (req, res) => {
+  try {
+    const registration = await ICHRegistration.findByIdAndDelete(req.params.id);
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: "Hypnotherapy registration not found",
+      });
+    }
+
+  
+    res.status(200).json({
+      success: true,
+      message: "Hypnotherapy registration deleted successfully",
+      data: {
+        id: registration._id,
+        name: `${registration.firstName} ${registration.lastName}`,
+        email: registration.email,
+      },
+    });
+  } catch (error) {
+    console.error("Delete Hypnotherapy registration error:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid registration ID format",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete Hypnotherapy registration",
     });
   }
 };

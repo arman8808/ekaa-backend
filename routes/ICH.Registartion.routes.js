@@ -14,4 +14,5 @@ router.get(
   ichRegistrationController.downloadICHRegistrationsCSV
 );
 router.get('/:id', ichRegistrationController.getOneICHRegistration);
+router.delete('/:id', ichRegistrationController.deleteICHRegistration);
 module.exports = router;
