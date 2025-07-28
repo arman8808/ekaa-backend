@@ -14,15 +14,15 @@ const PAYMENT_LINK_MAP = {
 };
 exports.createRegistration = async (req, res) => {
   try {
-    // const idPhotofrontPath = req.files.idPhotofront[0].path;
-    // const idphotobackPath = req.files.idphotoback?.[0]?.path;
-    // const profilePhotoPath = req.files.profileImage[0].path;
+    const idPhotofrontPath = req.files.idPhotofront[0].path;
+    const idphotobackPath = req.files.idphotoback?.[0]?.path;
+    const profilePhotoPath = req.files.profileImage[0].path;
 
     const registrationData = {
       ...req.body,
-      // idPhotofront: idPhotofrontPath,
-      // idphotoback: idphotobackPath,
-      // profileImage: profilePhotoPath,
+      idPhotofront: idPhotofrontPath,
+      idphotoback: idphotobackPath,
+      profileImage: profilePhotoPath,
     };
 
     const registration = new Registration(registrationData);

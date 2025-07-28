@@ -45,9 +45,9 @@ router.post('/',
   registrationValidation,
   (req, res, next) => {
     // Check for file uploads
-    // if (!req.files || !req.files.idPhotofront || !req.files.profileImage) {
-    //   return res.status(422).json({ success: false, errors: [{ msg: 'Both ID photo front and back are required.' }] });
-    // }
+    if (!req.files || !req.files.idPhotofront || !req.files.profileImage) {
+      return res.status(422).json({ success: false, errors: [{ msg: 'Both ID photo front and back are required.' }] });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ success: false, errors: errors.array() });
