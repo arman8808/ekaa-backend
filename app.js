@@ -4,6 +4,8 @@ const familyConsiltalition = require("./routes/family.consitalation.registration
 const ich = require("./routes/ICH.Registartion.routes");
 const contactRoutes = require("./routes/contact");
 const adminRoutes = require('./routes/adminRoutes');
+const familyEvent = require('./routes/familyEventRoutes');
+const hypnotherapy = require('./routes/hypnotherapyRoutes');
 dotenv.config();
 
 const express = require("express");
@@ -24,6 +26,8 @@ app.use(`/api/familyConsitalation`, familyConsiltalition);
 app.use(`/api/ich`, ich);
 app.use(`/api/`, contactRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/familyEvent', familyEvent);
+app.use('/api/hypnotherapy', hypnotherapy);
 app.get("/", (req, res) => {
   console.log("server is running");
   res.status(200).json({ message: "Server is running" });
