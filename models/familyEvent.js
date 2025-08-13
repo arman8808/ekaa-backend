@@ -79,7 +79,25 @@ const eventSchema = new mongoose.Schema(
       },
       default: "Open",
     },
+    facilitator: {
+      type: String,
+      default: "",
+    },
+    externalLink: {
+      type: String,
+      default: "",
+      validate: {
+        validator: function (v) {
+          if (!v) return true; // Optional field
+          return /^(https?:\/\/)?([\da-z.-]+)\.([a-z]{2,})([\/\w \.\-?=&%\[\]]*)*\/?$/.test(
+            v
+          );
+        },
+        message: (props) => `${props.value} is not a valid URL`,
+      },
+    },
   },
+
   {
     timestamps: true,
   }

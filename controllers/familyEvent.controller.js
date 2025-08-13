@@ -1,38 +1,39 @@
-
-const asyncHandler = require('express-async-handler');
-const familyEvent = require('../models/familyEvent');
+const asyncHandler = require("express-async-handler");
+const familyEvent = require("../models/familyEvent");
 
 // @desc    Get all events
 // @route   GET /api/events
 // @access  Public
 const getEvents = asyncHandler(async (req, res) => {
-  const { search, page = 1, limit = 5 } = req.query;
-  
+  const { search, page = 1, limit = 10 } = req.query;
+
   let query = {};
-  
+
   if (search) {
     query = {
       $or: [
-        { location: { $regex: search, $options: 'i' } },
-        { organisedby: { $regex: search, $options: 'i' } },
-        { status: { $regex: search, $options: 'i' } },
-        { date: { $regex: search, $options: 'i' } }
-      ]
+        { location: { $regex: search, $options: "i" } },
+        { organisedby: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+        { date: { $regex: search, $options: "i" } },
+      ],
     };
   }
-  
-  const events = await familyEvent.find(query)
+
+  const events = await familyEvent
+    .find(query)
+    .sort({ createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit)
     .exec();
-    
+
   const count = await familyEvent.countDocuments(query);
-  
+
   res.json({
     events,
     totalPages: Math.ceil(count / limit),
     currentPage: page,
-    totalEvents: count
+    totalEvents: count,
   });
 });
 
@@ -48,11 +49,13 @@ const createEvent = asyncHandler(async (req, res) => {
     organiserEmail,
     price,
     paymentLink,
-    status
+    status,
+    facilitator,
+    externalLink,
   } = req.body;
-  
+
   const event = await familyEvent.create({
-    event: 'Family Constellation',
+    event: "Family Constellation",
     date,
     location,
     capacity,
@@ -60,9 +63,11 @@ const createEvent = asyncHandler(async (req, res) => {
     organiserEmail,
     price,
     paymentLink,
-    status
+    status,
+    facilitator,
+    externalLink,
   });
-  
+
   res.status(201).json(event);
 });
 
@@ -71,18 +76,18 @@ const createEvent = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const updateEvent = asyncHandler(async (req, res) => {
   const event = await familyEvent.findById(req.params.id);
-  
+
   if (!event) {
     res.status(404);
-    throw new Error('Event not found');
+    throw new Error("Event not found");
   }
-  
+
   const updatedEvent = await familyEvent.findByIdAndUpdate(
     req.params.id,
     req.body,
     { new: true, runValidators: true }
   );
-  
+
   res.json(updatedEvent);
 });
 
@@ -91,15 +96,15 @@ const updateEvent = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const deleteEvent = asyncHandler(async (req, res) => {
   const event = await familyEvent.findById(req.params.id);
-  
+
   if (!event) {
     res.status(404);
-    throw new Error('Event not found');
+    throw new Error("Event not found");
   }
-  
-  await event.remove();
-  
-  res.json({ message: 'Event removed' });
+
+  await event.deleteOne();
+
+  res.json({ message: "Event removed" });
 });
 
 // @desc    Get single event
@@ -107,12 +112,12 @@ const deleteEvent = asyncHandler(async (req, res) => {
 // @access  Public
 const getEvent = asyncHandler(async (req, res) => {
   const event = await familyEvent.findById(req.params.id);
-  
+
   if (!event) {
     res.status(404);
-    throw new Error('Event not found');
+    throw new Error("Event not found");
   }
-  
+
   res.json(event);
 });
 
@@ -121,5 +126,5 @@ module.exports = {
   createEvent,
   updateEvent,
   deleteEvent,
-  getEvent
+  getEvent,
 };

@@ -46,7 +46,7 @@ const LearningSectionSchema = new mongoose.Schema({
   }]
 });
 
-const HypnotherapyProgramSchema = new mongoose.Schema({
+const DecodeProgramSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Title is required'],
@@ -57,29 +57,23 @@ const HypnotherapyProgramSchema = new mongoose.Schema({
     required: [true, 'Subtitle is required'],
     minlength: [5, 'Subtitle must be at least 5 characters']
   },
-  duration: {
-    type: String,
-    required: [true, 'Duration is required'],
-    minlength: [3, 'Duration must be at least 3 characters']
-  },
   videoUrl: {
     type: String,
     validate: {
       validator: function(v) {
-        // URL is optional, but if provided must be valid
         if (!v) return true;
-        try {
-          new URL(v);
-          return true;
-        } catch {
-          return false;
-        }
+        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(v);
       },
-      message: props => `${props.value} is not a valid URL`
+      message: props => `${props.value} is not a valid URL!`
     }
   },
   thumbnail: {
     type: String
+  },
+  duration: {
+    type: String,
+    required: [true, 'Duration is required'],
+    minlength: [3, 'Duration must be at least 3 characters']
   },
   cardPoints: [{
     type: String,
@@ -95,4 +89,4 @@ const HypnotherapyProgramSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('HypnotherapyProgram', HypnotherapyProgramSchema);
+module.exports = mongoose.model('DecodeProgram', DecodeProgramSchema);
