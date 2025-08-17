@@ -1,13 +1,14 @@
 const DecodeProgram = require("../models/decodeProgram");
-
 const fs = require("fs");
 const path = require("path");
 
-// Helper to parse JSON fields from form data
+// Enhanced helper to parse and transform form data
 const parseFormDataFields = (body) => {
   const parsed = { ...body };
+  
+  // Fields that might be JSON strings
   const arrayFields = ["cardPoints", "learningSections", "upcomingEvents"];
-
+  
   arrayFields.forEach((field) => {
     if (typeof body[field] === "string") {
       try {
@@ -18,6 +19,45 @@ const parseFormDataFields = (body) => {
       }
     }
   });
+
+  // Convert legacy data format if needed
+  if (parsed.learningSections) {
+    parsed.learningSections = parsed.learningSections.map(section => {
+      // Convert old points array to content if needed
+      if (section.points && !section.content) {
+        return {
+          title: section.title,
+          content: `<ul>${section.points.map(point => `<li>${point}</li>`).join('')}</ul>`
+        };
+      }
+      return section;
+    });
+  }
+
+  if (parsed.upcomingEvents) {
+    // Filter out empty events
+    parsed.upcomingEvents = parsed.upcomingEvents.filter(event => {
+      return event.startDate || event.endDate || event.eventName || 
+             event.location || event.organiser || event.price || event.paymentLink;
+    });
+
+    // Convert legacy date format if needed
+    parsed.upcomingEvents = parsed.upcomingEvents.map(event => {
+      if (event.date && !event.startDate) {
+        const eventDate = new Date(event.date);
+        const endDate = new Date(eventDate);
+        endDate.setHours(eventDate.getHours() + 2); // Default 2-hour duration
+        
+        return {
+          ...event,
+          startDate: eventDate,
+          endDate: endDate,
+          date: undefined // Remove old field
+        };
+      }
+      return event;
+    });
+  }
 
   return parsed;
 };
@@ -67,6 +107,10 @@ exports.createProgram = async (req, res) => {
     await program.save();
     res.status(201).json(program);
   } catch (err) {
+    // Clean up uploaded file if there was an error
+    if (req.file) {
+      fs.unlinkSync(path.join('uploads', req.file.filename));
+    }
     res.status(400).json({ message: err.message });
   }
 };
@@ -86,11 +130,7 @@ exports.updateProgram = async (req, res) => {
     if (req.file) {
       // Delete old thumbnail if exists
       if (program.thumbnail) {
-        const oldThumbnailPath = path.join(
-          __dirname,
-          "../uploads",
-          program.thumbnail
-        );
+        const oldThumbnailPath = path.join('uploads', program.thumbnail);
         fs.unlink(oldThumbnailPath, (err) => {
           if (err) console.error("Failed to delete old thumbnail:", err);
         });
@@ -106,6 +146,10 @@ exports.updateProgram = async (req, res) => {
 
     res.json(updatedProgram);
   } catch (err) {
+    // Clean up uploaded file if there was an error
+    if (req.file) {
+      fs.unlinkSync(path.join('uploads', req.file.filename));
+    }
     res.status(400).json({ message: err.message });
   }
 };
@@ -121,11 +165,7 @@ exports.deleteProgram = async (req, res) => {
 
     // Delete associated thumbnail
     if (program.thumbnail) {
-      const thumbnailPath = path.join(
-        __dirname,
-        "../uploads",
-        program.thumbnail
-      );
+      const thumbnailPath = path.join('uploads', program.thumbnail);
       fs.unlink(thumbnailPath, (err) => {
         if (err) console.error("Failed to delete thumbnail:", err);
       });

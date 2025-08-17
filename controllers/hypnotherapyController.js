@@ -7,10 +7,8 @@ const processProgramData = (req) => {
   let programData;
   
   if (req.file) {
-    // If there's a file upload, process form data
     programData = JSON.parse(JSON.stringify(req.body));
     
-    // Handle arrays that were stringified
     if (programData.cardPoints) {
       programData.cardPoints = JSON.parse(programData.cardPoints);
     }
@@ -19,22 +17,72 @@ const processProgramData = (req) => {
     }
     if (programData.upcomingEvents) {
       programData.upcomingEvents = JSON.parse(programData.upcomingEvents);
+      
+      // Filter out any empty event objects
+      programData.upcomingEvents = programData.upcomingEvents.filter(event => 
+        event && (event.startDate || event.endDate || event.eventName || 
+                 event.location || event.organiser || event.price || event.paymentLink)
+      );
+      
+      // Convert legacy date format if needed
+      programData.upcomingEvents = programData.upcomingEvents.map(event => {
+        if (event.date && !event.startDate) {
+          const eventDate = new Date(event.date);
+          const endDate = new Date(eventDate);
+          endDate.setHours(eventDate.getHours() + 2);
+          
+          return {
+            ...event,
+            startDate: eventDate,
+            endDate: endDate,
+            date: undefined
+          };
+        }
+        return event;
+      });
+    } else {
+      programData.upcomingEvents = []; // Ensure it's an empty array if not provided
     }
     
-    // Add the thumbnail filename
     programData.thumbnail = req.file.filename;
   } else {
-    // No file upload, use body directly
     programData = req.body;
+    
+    if (programData.upcomingEvents) {
+      // Filter out any empty event objects
+      programData.upcomingEvents = programData.upcomingEvents.filter(event => 
+        event && (event.startDate || event.endDate || event.eventName || 
+                 event.location || event.organiser || event.price || event.paymentLink)
+      );
+      
+      // Convert legacy date format if needed
+      programData.upcomingEvents = programData.upcomingEvents.map(event => {
+        if (event.date && !event.startDate) {
+          const eventDate = new Date(event.date);
+          const endDate = new Date(eventDate);
+          endDate.setHours(eventDate.getHours() + 2);
+          
+          return {
+            ...event,
+            startDate: eventDate,
+            endDate: endDate,
+            date: undefined
+          };
+        }
+        return event;
+      });
+    } else {
+      programData.upcomingEvents = []; // Ensure it's an empty array if not provided
+    }
   }
   
   return programData;
 };
 
-// Get all programs with pagination and search
+// Get all programs with search
 exports.getPrograms = async (req, res) => {
   try {
-    const { search = '', page = 1, limit = 10 } = req.query;
+    const { search = '' } = req.query;
     
     const query = {
       $or: [
@@ -45,17 +93,11 @@ exports.getPrograms = async (req, res) => {
     };
 
     const programs = await HypnotherapyProgram.find(query)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-
-    const count = await HypnotherapyProgram.countDocuments(query);
 
     res.json({
       programs,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
-      totalPrograms: count
+      totalPrograms: programs.length
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -90,6 +132,11 @@ exports.updateProgram = async (req, res) => {
     }
     
     const programData = processProgramData(req);
+    
+    // If no new thumbnail is provided, keep the existing one
+    if (!req.file && oldThumbnail) {
+      programData.thumbnail = oldThumbnail;
+    }
     
     const program = await HypnotherapyProgram.findByIdAndUpdate(
       req.params.id,

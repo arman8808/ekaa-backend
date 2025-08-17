@@ -1,34 +1,61 @@
 const mongoose = require('mongoose');
 
 const UpcomingEventSchema = new mongoose.Schema({
-  date: {
-    type: String,
-    required: [true, 'Date is required'],
-    match: [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{1,2},\s\d{4}$/, 'Date must be in MMM DD, YYYY format']
+  startDate: {
+    type: Date,
+    required: function() {
+      // Only require if the parent document has upcomingEvents
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    }
+  },
+  endDate: {
+    type: Date,
+    required: function() {
+      // Only require if the parent document has upcomingEvents
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
+    validate: {
+      validator: function(endDate) {
+        // Only validate if both dates exist
+        if (!endDate || !this.startDate) return true;
+        return endDate > this.startDate;
+      },
+      message: 'End date must be after start date'
+    }
   },
   eventName: {
     type: String,
-    required: [true, 'Event name is required'],
+    required: function() {
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
     minlength: [5, 'Event name must be at least 5 characters']
   },
   location: {
     type: String,
-    required: [true, 'Location is required'],
+    required: function() {
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
     minlength: [3, 'Location must be at least 3 characters']
   },
   organiser: {
     type: String,
-    required: [true, 'Organizer is required'],
+    required: function() {
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
     minlength: [3, 'Organizer name must be at least 3 characters']
   },
   price: {
     type: String,
-    required: [true, 'Price is required'],
-    match: [/^\$\s?\d+(,\d{3})*(\.\d{2})?$/, 'Price must be in currency format']
+    required: function() {
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
+    match: [/^\$?\d+(\.\d{1,2})?$/, 'Price must be in currency format']
   },
   paymentLink: {
     type: String,
-    required: [true, 'Payment link is required'],
+    required: function() {
+      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
+    },
     match: [/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, 'Invalid URL format']
   }
 });
@@ -39,11 +66,18 @@ const LearningSectionSchema = new mongoose.Schema({
     required: [true, 'Section title is required'],
     minlength: [5, 'Section title must be at least 5 characters']
   },
-  points: [{
+  content: {
     type: String,
-    required: [true, 'Learning point is required'],
-    minlength: [5, 'Learning point must be at least 5 characters']
-  }]
+    required: [true, 'Content is required'],
+    validate: {
+      validator: function(v) {
+        // Remove HTML tags and check length
+        const textContent = v.replace(/<[^>]*>/g, '').trim();
+        return textContent.length >= 10;
+      },
+      message: 'Content must be at least 10 characters (excluding HTML)'
+    }
+  }
 });
 
 const DecodeProgramSchema = new mongoose.Schema({
@@ -78,10 +112,20 @@ const DecodeProgramSchema = new mongoose.Schema({
   cardPoints: [{
     type: String,
     required: [true, 'Card point is required'],
-    minlength: [5, 'Card point must be at least 5 characters']
+    validate: {
+      validator: function(v) {
+        // Remove HTML tags and check length
+        const textContent = v.replace(/<[^>]*>/g, '').trim();
+        return textContent.length >= 5;
+      },
+      message: 'Card point must be at least 5 characters (excluding HTML)'
+    }
   }],
   learningSections: [LearningSectionSchema],
-  upcomingEvents: [UpcomingEventSchema],
+  upcomingEvents: {
+    type: [UpcomingEventSchema],
+    default: undefined // Makes the array optional
+  },
   status: {
     type: String,
     enum: ['Open', 'Closed'],

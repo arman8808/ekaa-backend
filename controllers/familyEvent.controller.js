@@ -1,11 +1,18 @@
 const asyncHandler = require("express-async-handler");
 const familyEvent = require("../models/familyEvent");
 
+// Helper function to format date for display
+const formatLegacyDate = (dateString) => {
+  const date = new Date(dateString);
+  const options = { month: 'short', day: 'numeric', year: 'numeric' };
+  return date.toLocaleDateString('en-US', options);
+};
+
 // @desc    Get all events
 // @route   GET /api/events
 // @access  Public
 const getEvents = asyncHandler(async (req, res) => {
-  const { search, page = 1, limit = 10 } = req.query;
+  const { search } = req.query;
 
   let query = {};
 
@@ -16,24 +23,29 @@ const getEvents = asyncHandler(async (req, res) => {
         { organisedby: { $regex: search, $options: "i" } },
         { status: { $regex: search, $options: "i" } },
         { date: { $regex: search, $options: "i" } },
+        { "facilitator": { $regex: search, $options: "i" } }
       ],
     };
   }
 
   const events = await familyEvent
     .find(query)
-    .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
+    .sort({ startDate: 1 }) // Sort by startDate in ascending order
+    .lean() // Convert to plain JavaScript objects
     .exec();
 
-  const count = await familyEvent.countDocuments(query);
+  // Format dates for display
+  const formattedEvents = events.map(event => {
+    // For backward compatibility, include the old date format if it exists
+    if (!event.date && event.startDate) {
+      event.date = formatLegacyDate(event.startDate);
+    }
+    return event;
+  });
 
   res.json({
-    events,
-    totalPages: Math.ceil(count / limit),
-    currentPage: page,
-    totalEvents: count,
+    events: formattedEvents,
+    totalEvents: formattedEvents.length,
   });
 });
 
@@ -42,7 +54,8 @@ const getEvents = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const createEvent = asyncHandler(async (req, res) => {
   const {
-    date,
+    startDate,
+    endDate,
     location,
     capacity,
     organisedby,
@@ -54,9 +67,19 @@ const createEvent = asyncHandler(async (req, res) => {
     externalLink,
   } = req.body;
 
+  // Convert to Date objects and validate
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  if (end <= start) {
+    res.status(400);
+    throw new Error("End date must be after start date");
+  }
+
   const event = await familyEvent.create({
     event: "Family Constellation",
-    date,
+    startDate: start,
+    endDate: end,
     location,
     capacity,
     organisedby,
@@ -80,6 +103,48 @@ const updateEvent = asyncHandler(async (req, res) => {
   if (!event) {
     res.status(404);
     throw new Error("Event not found");
+  }
+
+  // Convert string dates to Date objects if they exist in the request
+  let startDate, endDate;
+  
+  if (req.body.startDate) {
+    startDate = new Date(req.body.startDate);
+    if (isNaN(startDate.getTime())) {
+      res.status(400);
+      throw new Error("Invalid start date format");
+    }
+    req.body.startDate = startDate;
+  }
+  
+  if (req.body.endDate) {
+    endDate = new Date(req.body.endDate);
+    if (isNaN(endDate.getTime())) {
+      res.status(400);
+      throw new Error("Invalid end date format");
+    }
+    req.body.endDate = endDate;
+  }
+
+  // Validate date relationships
+  if (startDate && endDate) {
+    // Both dates are being updated
+    if (endDate < startDate) {
+      res.status(400);
+      throw new Error("End date must be on or after start date");
+    }
+  } else if (startDate && !endDate) {
+    // Only startDate is being updated
+    if (startDate >= event.endDate) {
+      res.status(400);
+      throw new Error("New start date must be before existing end date");
+    }
+  } else if (endDate && !startDate) {
+    // Only endDate is being updated
+    if (endDate <= event.startDate) {
+      res.status(400);
+      throw new Error("End date must be after start date");
+    }
   }
 
   const updatedEvent = await familyEvent.findByIdAndUpdate(
@@ -116,6 +181,11 @@ const getEvent = asyncHandler(async (req, res) => {
   if (!event) {
     res.status(404);
     throw new Error("Event not found");
+  }
+
+  // For backward compatibility
+  if (!event.date && event.startDate) {
+    event.date = formatLegacyDate(event.startDate);
   }
 
   res.json(event);

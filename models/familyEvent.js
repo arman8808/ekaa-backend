@@ -8,17 +8,38 @@ const eventSchema = new mongoose.Schema(
       required: [true, "Event name is required"],
       default: "Family Constellation",
     },
+    // Keep the old date field for backward compatibility
     date: {
       type: String,
-      required: [true, "Date is required"],
       validate: {
         validator: function (v) {
+          if (!v) return true; // Optional now
           return /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{1,2},\s\d{4}$/.test(
             v
           );
         },
         message: (props) =>
           `${props.value} is not a valid date format (MMM DD, YYYY)`,
+      },
+    },
+    // Add new date fields
+    startDate: {
+      type: Date,
+      required: [true, "Start date is required"],
+    },
+    endDate: {
+      type: Date,
+      required: [true, "End date is required"],
+      validate: {
+        validator: function (v) {
+          // For new documents, validate against startDate
+          if (this.startDate) {
+            return v >= this.startDate;
+          }
+          // For updates, we'll handle validation in the controller
+          return true;
+        },
+        message: "End date must be on or after start date",
       },
     },
     location: {
@@ -55,7 +76,7 @@ const eventSchema = new mongoose.Schema(
           return /^\$\s?\d+(,\d{3})*(\.\d{2})?$/.test(v);
         },
         message: (props) =>
-          `${props.value} is not a valid price format (e.g., "$375" or "$375.00")`,
+          `${props.value} is not a valid price format (e.g., "$375", "$ 375", or "$375.00")`,
       },
     },
     paymentLink: {
@@ -97,7 +118,6 @@ const eventSchema = new mongoose.Schema(
       },
     },
   },
-
   {
     timestamps: true,
   }
