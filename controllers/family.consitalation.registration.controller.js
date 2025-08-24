@@ -1,4 +1,6 @@
 const familyConsitalionRegistration = require("../models/family.consitalation.registration.modal");
+const FamilyEvent = require("../models/familyEvent");
+const mongoose = require("mongoose");
 const { sendRegistrationEmails } = require("../utils/mailer");
 // const { sendRegistrationEmails } = require('../services/emailService');
 
@@ -9,48 +11,163 @@ const DOCTOR_EMAIL_MAP = {
   "Dr. Sonia Gupte's": "Sonia@enso-nia.com",
 };
 
+// Function to generate unique 6-digit sessionId with timestamp
+const generateSessionId = () => {
+  const timestamp = Date.now().toString();
+  const randomDigits = Math.floor(Math.random() * 900000) + 100000; // 6-digit random number
+  return `${timestamp.slice(-6)}${randomDigits}`;
+};
+
 
 exports.createRegistration = async (req, res) => {
   try {
-    const { session, fullName, email, phone } = req.body;
+    console.log("Received body:", req.body);
+    
+    // Extract program information from request body
+    const { programId, sessionId, fullName, email, phone, termsAndCondition, communicationPreferences } = req.body;
 
-    const doctorEmail =
-      DOCTOR_EMAIL_MAP[session.organisedby] || "default@example.com";
+    console.log("Extracted programId:", { programId });
 
-    const registrationData = {
-      sessionId: session.id,
-      event: session.Event,
-      date: session.Date,
-      location: session.Location,
-      organisedBy: session.organisedby,
-      organiserEmail: session.organiserEmail,
-      fullName,
-      email,
-      phone,
-    };
-
-    // Save to database
-    const newRegistration = new familyConsitalionRegistration(registrationData);
-    await newRegistration.save();
-   const emailData = {
-      ...registrationData,
-      _id: newRegistration._id
-    };
-
-    // Send emails
-    const emailSent = await sendRegistrationEmails(emailData);
-
-    if (!emailSent) {
-      return res.status(500).json({
+    // Check if programId is provided
+    if (!programId) {
+      return res.status(404).json({
         success: false,
-        message: 'Registration saved but email sending failed'
+        message: "programId is required for registration",
+        error: "Missing programId",
       });
     }
-    res.status(201).json({
-      success: true,
-      message: "Registration successful!",
-      registration: newRegistration,
-    });
+
+    // Check if required boolean fields are provided
+    if (termsAndCondition === undefined || termsAndCondition === null) {
+      return res.status(400).json({
+        success: false,
+        message: "termsAndCondition is required for registration",
+        error: "Missing termsAndCondition",
+      });
+    }
+
+    if (communicationPreferences === undefined || communicationPreferences === null) {
+      return res.status(400).json({
+        success: false,
+        message: "communicationPreferences is required for registration",
+        error: "Missing communicationPreferences",
+      });
+    }
+
+    // Validate that the program exists
+    try {
+      console.log("Converting programId to ObjectId...");
+      
+      // Validate ObjectId format first
+      if (!mongoose.Types.ObjectId.isValid(programId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid programId format",
+          error: "Invalid ObjectId format for programId",
+          receivedId: programId
+        });
+      }
+      
+      // Convert string to ObjectId
+      const programObjectId = new mongoose.Types.ObjectId(programId);
+      
+      console.log("Converted ObjectId:", { programObjectId });
+
+      console.log("About to query FamilyEvent with ID:", programObjectId);
+      
+      let program;
+      try {
+        program = await FamilyEvent.findById(programObjectId);
+        console.log("FamilyEvent.findById result:", program);
+        
+        if (!program) {
+          return res.status(404).json({
+            success: false,
+            message: "Program not found with the provided programId",
+            error: "Invalid programId",
+          });
+        }
+      } catch (findError) {
+        console.log("Error in FamilyEvent.findById:", findError);
+        return res.status(500).json({
+          success: false,
+          message: "Database error while finding program",
+          error: findError.message,
+        });
+      }
+
+      console.log("Found program:", program);
+
+      // Generate unique sessionId if not provided
+      const finalSessionId = sessionId || generateSessionId();
+      console.log("Generated sessionId:", finalSessionId);
+
+      // Update registrationData with the converted ObjectId and fetch event details from FamilyEvent
+      const registrationData = {
+        programId: programObjectId,
+        sessionId: finalSessionId,
+        event: program.event,           // From FamilyEvent
+        date: program.startDate ? new Date(program.startDate).toLocaleDateString() : program.date, // From FamilyEvent
+        location: program.location,     // From FamilyEvent
+        organisedBy: program.organisedby, // From FamilyEvent
+        organiserEmail: program.organiserEmail, // From FamilyEvent
+        fullName,
+        email,
+        phone,
+        termsAndCondition,
+        communicationPreferences,
+      };
+
+      console.log("Registration data:", registrationData);
+
+      // Save to database
+      const newRegistration = new familyConsitalionRegistration(registrationData);
+      await newRegistration.save();
+
+      const emailData = {
+        ...registrationData,
+        _id: newRegistration._id,
+        paymentLink: program.paymentLink, // Add payment link from FamilyEvent
+        organiserEmail: program.organiserEmail // Ensure organizer email is included
+      };
+
+      // Send emails
+      const emailSent = await sendRegistrationEmails(emailData);
+
+      if (!emailSent) {
+        return res.status(500).json({
+          success: false,
+          message: 'Registration saved but email sending failed'
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        message: "Registration successful!",
+        registration: newRegistration,
+      });
+
+    } catch (error) {
+      console.log("Error validating IDs:", error);
+      
+      // Check if it's an ObjectId conversion error
+      if (error.message && error.message.includes("does not match the accepted types")) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid ID format provided. Please check programId.",
+          error: "Invalid ObjectId format",
+          receivedId: programId
+        });
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format provided",
+        error: "Invalid ID format",
+        receivedId: programId
+      });
+    }
+
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -80,6 +197,7 @@ exports.getAllRegistrations = async (req, res) => {
 
     const registrations = await familyConsitalionRegistration
       .find(searchQuery)
+      .populate("programId", "event location organisedby organiserEmail price")
       .sort({ createdAt: -1 }) // Always show newest first
       .skip(skip)
       .limit(parseInt(limit))
@@ -176,13 +294,14 @@ exports.downloadRegistrationsCSV = async (req, res) => {
 
     // Define CSV headers
     const headers = [
-      'ID', 'Event', 'Date', 'Location', 'Organised By', 'Organiser Email',
-      'Full Name', 'Email', 'Phone', 'Registration Date'
+      'ID', 'Program ID', 'Event', 'Date', 'Location', 'Organised By', 'Organiser Email',
+      'Full Name', 'Email', 'Phone', 'Terms Accepted', 'Communication Preferences', 'Registration Date'
     ];
 
     // Convert registrations to CSV rows
     const rows = registrations.map(reg => [
       reg._id,
+      reg.programId || '',
       `"${reg.event || ''}"`,
       `"${reg.date || ''}"`,
       `"${reg.location || ''}"`,
@@ -191,6 +310,8 @@ exports.downloadRegistrationsCSV = async (req, res) => {
       `"${reg.fullName || ''}"`,
       `"${reg.email || ''}"`,
       `"${reg.phone || ''}"`,
+      reg.termsAndCondition ? 'Yes' : 'No',
+      reg.communicationPreferences ? 'Yes' : 'No',
       `"${reg.createdAt.toISOString()}"`
     ]);
 

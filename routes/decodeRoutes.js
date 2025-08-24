@@ -6,10 +6,14 @@ const {
   createProgram,
   updateProgram,
   deleteProgram,
-  getProgramById
+  getProgramById,
+  getProgramByIdForUsers,
+  getProgramsForUsers
 } = require('../controllers/decodeController');
 
 router.get('/', getPrograms);
+router.get('/user', getProgramsForUsers);
+router.get('/user/:id', getProgramByIdForUsers);
 router.post('/', upload.single('thumbnail'), createProgram);
 router.get('/:id', getProgramById);
 router.put('/:id', upload.single('thumbnail'), updateProgram);

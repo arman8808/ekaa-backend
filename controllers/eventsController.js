@@ -53,7 +53,8 @@ exports.getOpenEvents = async (req, res) => {
         .map((event) => ({
           ...event.toObject(),
           programTitle: program.title,
-          programType: "hypnotherapy",
+          eventType: "hyp", // Hypnotherapy events
+          programId: program._id, // Include original program ID
           // For consistent response format
           event: event.eventName,
           organisedby: event.organiser,
@@ -96,7 +97,8 @@ exports.getOpenEvents = async (req, res) => {
         .map((event) => ({
           ...event.toObject(),
           programTitle: program.title,
-          programType: "decode",
+          eventType: "decode", // Decode events
+          programId: program._id, // Include original program ID
           // For consistent response format
           event: event.eventName,
           organisedby: event.organiser,
@@ -114,7 +116,8 @@ exports.getOpenEvents = async (req, res) => {
     const allEvents = [
       ...familyEvents.map((event) => ({
         ...event.toObject(),
-        programType: "family",
+        eventType: "fc", // Family Consultation events
+        programId: event._id, // Include original event ID (since FamilyEvent is the program itself)
         // Calculate duration in hours for display
         duration: Math.round(
           (new Date(event.endDate) - new Date(event.startDate)) /

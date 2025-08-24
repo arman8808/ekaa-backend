@@ -40,6 +40,11 @@ const UpcomingEventSchema = new mongoose.Schema({
     required: [true, "Organizer name is required"],
     minlength: [3, "Organizer name must be at least 3 characters"],
   },
+  organizerEmail: {
+    type: String,
+    required: [true, "Organizer email is required"],
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address']
+  },
   price: {
     type: String,
     required: [true, "Price is required"],

@@ -3,17 +3,11 @@ const mongoose = require('mongoose');
 const UpcomingEventSchema = new mongoose.Schema({
   startDate: {
     type: Date,
-    required: function() {
-      // Only require if the parent document has upcomingEvents
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    }
+    required: [true, "Start date is required"],
   },
   endDate: {
     type: Date,
-    required: function() {
-      // Only require if the parent document has upcomingEvents
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
+    required: [true, "End date is required"],
     validate: {
       validator: function(endDate) {
         // Only validate if both dates exist
@@ -25,39 +19,50 @@ const UpcomingEventSchema = new mongoose.Schema({
   },
   eventName: {
     type: String,
-    required: function() {
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
+    required: [true, "Event name is required"],
     minlength: [5, 'Event name must be at least 5 characters']
   },
   location: {
     type: String,
-    required: function() {
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
+    required: [true, "Location is required"],
     minlength: [3, 'Location must be at least 3 characters']
   },
   organiser: {
     type: String,
-    required: function() {
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
+    required: [true, "Organizer name is required"],
     minlength: [3, 'Organizer name must be at least 3 characters']
+  },
+  organizerEmail: {
+    type: String,
+    required: [true, "Organizer email is required"],
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address']
   },
   price: {
     type: String,
-    required: function() {
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
+    required: [true, "Price is required"],
     match: [/^\$?\d+(\.\d{1,2})?$/, 'Price must be in currency format']
   },
   paymentLink: {
     type: String,
-    required: function() {
-      return this.parent().upcomingEvents && this.parent().upcomingEvents.length > 0;
-    },
-    match: [/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, 'Invalid URL format']
-  }
+    required: [true, "Payment link is required"],
+    validate: {
+      validator: function(v) {
+        if (!v) return true;
+        try {
+          new URL(v);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      message: 'Invalid URL format'
+    }
+  },
+  status: {
+    type: String,
+    enum: ["Open", "Closed"],
+    default: "Open",
+  },
 });
 
 const LearningSectionSchema = new mongoose.Schema({
@@ -96,7 +101,12 @@ const DecodeProgramSchema = new mongoose.Schema({
     validate: {
       validator: function(v) {
         if (!v) return true;
-        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(v);
+        try {
+          new URL(v);
+          return true;
+        } catch {
+          return false;
+        }
       },
       message: props => `${props.value} is not a valid URL!`
     }
@@ -124,7 +134,7 @@ const DecodeProgramSchema = new mongoose.Schema({
   learningSections: [LearningSectionSchema],
   upcomingEvents: {
     type: [UpcomingEventSchema],
-    default: undefined // Makes the array optional
+    default: [],
   },
   status: {
     type: String,

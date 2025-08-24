@@ -325,19 +325,8 @@ const emailTemplates = {
   `,
 
   userConfirmation: (registration) => {
-    // Check if payment is needed for these dates
-    const paymentDates = [
-      "Aug 9, 2025",
-      "Aug 12, 2025",
-      "Aug 18, 2025",
-      "Aug 20, 2025",
-      "Aug 22, 2025",
-      "Aug 23, 2025",
-      "Aug 28, 2025",
-      "Aug 29, 2025",
-      "Sept 7, 2025",
-    ];
-    const needsPayment = paymentDates.includes(registration.date);
+    // Check if payment link is available
+    const hasPaymentLink = registration.paymentLink && registration.paymentLink.trim() !== '';
 
     return `
     <div style="${emailStyles.container}">
@@ -349,18 +338,18 @@ const emailTemplates = {
         <p style="font-size: 16px;">Dear ${registration.fullName},</p>
         
         <p style="font-size: 16px;">Thank you for registering for our session! We've received your registration details ${
-          needsPayment
+          hasPaymentLink
             ? "and your payment is required to complete the registration"
             : ""
         }.</p>
         
         ${
-          needsPayment
+          hasPaymentLink
             ? `
           <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
             <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Complete Your Registration</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">Please complete your payment to secure your spot:</p>
-            <a href="https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01" 
+            <a href="${registration.paymentLink}" 
                style="${emailStyles.button}; background-color: #6e2d79; display: inline-block;">
               Make Payment Now
             </a>
@@ -415,40 +404,29 @@ const emailTemplates = {
   },
 };
 
-// Send email function
+// Send email function for Family Consultation registrations
 const sendRegistrationEmails = async (registration) => {
   try {
-    const paymentLinks = {
-      "Aug 9, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
-      "Aug 12, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
-      "Aug 18, 2025": "https://buy.stripe.com/8x2dR189Wgkla7u0Zl93y01",
-      "Aug 20, 2025": "https://buy.stripe.com/7sY00lfDKcFrcHa1YK7Vm0L",
-      "Aug 22, 2025":
-        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
-      "Aug 23, 2025":
-        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
-      "Aug 28, 2025":
-        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
-      "Aug 29, 2025":
-        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
-      "Sept 7, 2025":
-        "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/6JPYQHKGG2BK75Q6SMJB35O7",
-    };
-
-    const needsPaymentLink = paymentLinks.hasOwnProperty(registration.date);
-
-    const paymentLink = needsPaymentLink
-      ? paymentLinks[registration.date]
-      : null;
+    // Use the payment link from the registration data (fetched from FamilyEvent)
+    const paymentLink = registration.paymentLink;
+    
+    // Ensure organizer email is available for CC
+    const organiserEmail = registration.organiserEmail;
 
     const emailData = {
       ...registration,
       paymentLink: paymentLink,
     };
+    // Send admin notification with organizer email in CC
+    const adminCC = ["connect@ekaausa.com"];
+    if (organiserEmail) {
+      adminCC.push(organiserEmail);
+    }
+
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: "contact@ekaausa.com",
-      cc: ["connect@ekaausa.com", registration.organiserEmail],
+      cc: adminCC,
       subject: `New Registration: ${registration.event} - ${registration.date}`,
       html: emailTemplates.internalNotification(registration),
       replyTo: "contact@ekaausa.com",
@@ -561,119 +539,13 @@ const ichEmailTemplates = {
   },
 
   userConfirmation: (registration, paymentLink) => {
-    const cityParts = registration.city?.split("|") || [];
-    const trainingType = cityParts[1]?.trim() || "Hypnotherapy Training";
-    const trainingDates = cityParts[2]?.trim() || "";
-
-    const isL1 =
-      trainingType.includes("Hypnotherapy L1 Training") ||
-      trainingType.includes("Basic Course");
-    const isL2 =
-      trainingType.includes("Hypnotherapy L2 Training") ||
-      trainingType.includes("Behavioral Resolutions");
-    const isL3 =
-      trainingType.includes("Hypnotherapy L3 Training") ||
-      trainingType.includes("Health Resolutions");
-
-    const sessions = [
-      {
-        id: 1,
-        Event:
-          "Advanced Course in Integrated Hypnotic Modalities for Health Resolutions",
-        Date: "13th-17th Aug",
-        Location: "Houston",
-        organisedby: "Yuvraj Kapadia",
-        level: 3,
-      },
-      {
-        id: 4,
-        Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
-        Date: "11th Aug-12th Aug",
-        Location: "Houston TX",
-        organisedby: "Dr. Manoj",
-        level: 1,
-      },
-      {
-        id: 2,
-        Event: "Basic Course in Integrated Clinical Hypnotherapy Certification",
-        Date: "Aug 20-21, 2025",
-        Location: "Austin",
-        organisedby: "Dr. Manoj",
-        level: 1,
-      },
-      {
-        id: 3,
-        Event:
-          "Course in Integrated Hypnotic Modalities for Behavioral Resolutions.",
-        Date: "13th–17th Aug",
-        Location: "Houston TX",
-        organisedby: "Dr.Sonia Gupte",
-        level: 2,
-      },
-    ];
-
-    const normalizeDate = (dateStr) => {
-      if (!dateStr) return "";
-      return dateStr
-        .replace(/th|rd|nd|st|,/g, "")
-        .replace(/–/g, "-")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-    };
-
-    const matchingSession = sessions.find((session) => {
-      const sessionDateNormalized = normalizeDate(session.Date);
-      const trainingDateNormalized = normalizeDate(trainingDates);
-
-      const datesMatch =
-        sessionDateNormalized.includes(trainingDateNormalized) ||
-        trainingDateNormalized.includes(sessionDateNormalized);
-
-      const levelMatch =
-        (isL1 && session.level === 1) ||
-        (isL2 && session.level === 2) ||
-        (isL3 && session.level === 3);
-
-      return datesMatch && levelMatch;
-    });
-
-    const instructorName = matchingSession?.organisedby || "Dr. Manoj Bhardwaj";
-
-    const paymentLinks = {
-      l1: {
-        "20-21 aug 2025":
-          "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
-        "11 aug-12 aug": "https://buy.stripe.com/3cI5kv9e03xz7ZmdM793y04",
-        default:
-          "https://checkout.square.site/merchant/MLWJMSMMV9BVH/checkout/75K6WKOBWCFROFGM4LUDBT6I",
-      },
-      l2: {
-        "13-17 aug": "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
-        default: "https://buy.stripe.com/eVq6oz61O7NP4NaeQb93y05",
-      },
-      l3: {
-        "13-17 aug": "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
-        default: "https://buy.stripe.com/cNidR189W1pr1AY7nJ93y03",
-      },
-    };
-
-    const getPaymentLink = (level) => {
-      const levelLinks = paymentLinks[level];
-      const normalizedTrainingDates = normalizeDate(trainingDates);
-
-      // Try to find a matching date key
-      const foundKey = Object.keys(levelLinks).find((key) => {
-        if (key === "default") return false;
-        const normalizedKey = normalizeDate(key);
-        return (
-          normalizedTrainingDates.includes(normalizedKey) ||
-          normalizedKey.includes(normalizedTrainingDates)
-        );
-      });
-
-      return foundKey ? levelLinks[foundKey] : levelLinks.default;
-    };
+    // Use dynamic payment link if provided
+    const hasDynamicPaymentLink = paymentLink && paymentLink.trim() !== '';
+    
+    // Get training details from the registration data
+    const trainingType = registration.levelName || "Hypnotherapy Training";
+    const trainingDates = registration.city?.split("|")[2]?.trim() || "";
+    const instructorName = registration.city?.split("|")[1]?.trim() || "Dr. Manoj Bhardwaj";
 
     return `
     <div style="${emailStyles.container}">
@@ -689,65 +561,19 @@ const ichEmailTemplates = {
         <p style="font-size: 16px;">Thank you for registering for our <strong>${trainingType}</strong> program!</p>
         
         ${
-          isL1
+          hasDynamicPaymentLink
             ? `
           <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
-            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L1 Training Details</h3>
+            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Complete Your Registration</h3>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Your training will be conducted by ${instructorName} from ${trainingDates}.
             </p>
             <p style="margin: 0 0 15px 0; font-size: 16px;">
               Please complete your payment to secure your spot:
             </p>
-            <a href="${getPaymentLink("l1")}" 
+            <a href="${paymentLink}" 
                style="${emailStyles.button}; background-color: #6e2d79;">
-              Make L1 Payment Now
-            </a>
-            <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
-              Payment must be completed within 48 hours.
-            </p>
-          </div>
-        `
-            : ""
-        }
-        
-        ${
-          isL2
-            ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
-            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L2 Training Details</h3>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Your training will be conducted by ${instructorName} from ${trainingDates}.
-            </p>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Please complete your payment to secure your spot:
-            </p>
-            <a href="${getPaymentLink("l2")}" 
-               style="${emailStyles.button}; background-color: #6e2d79;">
-              Make L2 Payment Now
-            </a>
-            <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
-              Payment must be completed within 48 hours.
-            </p>
-          </div>
-        `
-            : ""
-        }
-        
-        ${
-          isL3
-            ? `
-          <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
-            <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">L3 Training Details</h3>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Your training will be conducted by ${instructorName} from ${trainingDates}.
-            </p>
-            <p style="margin: 0 0 15px 0; font-size: 16px;">
-              Please complete your payment to secure your spot:
-            </p>
-            <a href="${getPaymentLink("l3")}" 
-               style="${emailStyles.button}; background-color: #6e2d79;">
-              Make L3 Payment Now
+              Make Payment Now
             </a>
             <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">
               Payment must be completed within 48 hours.
@@ -823,13 +649,13 @@ const ichEmailTemplates = {
   },
 };
 
-const sendICHUserConfirmation = async ({ email, name, registration }) => {
+const sendICHUserConfirmation = async ({ email, name, registration, paymentLink }) => {
   try {
     await transporter.sendMail({
       from: `"Ekaa USA" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Hypnotherapy Registration Confirmation",
-      html: ichEmailTemplates.userConfirmation(registration),
+      html: ichEmailTemplates.userConfirmation(registration, paymentLink),
       replyTo: "contact@ekaausa.com",
     });
     return true;
@@ -844,16 +670,15 @@ const sendICHAdminNotification = async ({
   userName,
   registrationId,
   city,
+  organizerEmail,
+  eventDetails,
 }) => {
   try {
-    const isL1Training = city.includes("ICH L1 Training");
-    const isL3Training = city.includes("ICH L3 Training");
     const cc = ["connect@ekaausa.com"];
 
-    if (isL1Training) {
-      cc.push(DOCTOR_EMAIL_MAP["Dr Manoj's A/C"]);
-    } else if (isL3Training) {
-      cc.push(DOCTOR_EMAIL_MAP["Dr Aiyasawmy's A/C"]);
+    // Add organizer email to CC if available
+    if (organizerEmail) {
+      cc.push(organizerEmail);
     }
 
     await transporter.sendMail({
@@ -1007,44 +832,154 @@ const decodeEmailTemplates = {
   },
 };
 
-// Updated email sending functions
-const sendRegistrationEmail = async (registration) => {
+// Updated email sending functions for new data structure
+const sendRegistrationEmail = async (enhancedData) => {
   try {
-    const isDecodeChild = registration.city?.includes("Decode The Child");
+    const { event, program, firstName, lastName, email, mobileNo, levelName } = enhancedData;
+    
+    // Add organizer email to CC if available
     const cc = ["connect@ekaausa.com"];
-
-    if (isDecodeChild) {
-      cc.push(DOCTOR_EMAIL_MAP["Dr Aiyasawmy's A/C"]);
+    if (event.organizerEmail) {
+      cc.push(event.organizerEmail);
     }
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: `"EKAA USA" <${process.env.MAIL_USER}>`,
-      to: process.env.ADMIN_EMAIL,
+      to: process.env.ADMIN_EMAIL || process.env.MAIL_USER,
       cc: cc,
-      subject: `New Registration: ${
-        registration.city?.split("|")[1]?.trim() || "EKAA Program"
-      }`,
-      html: decodeEmailTemplates.adminNotification(registration),
+      subject: `New Registration: ${event.eventName} - ${program.title}`,
+      html: `
+        <div style="${emailStyles.container}">
+          <div style="${emailStyles.header}">
+            <h2 style="margin: 0;">New Registration Received</h2>
+          </div>
+          <div style="${emailStyles.content}">
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">Program Details</h3>
+              <div style="${emailStyles.field}">
+                <p><strong>Program:</strong> ${program.title}</p>
+                <p><strong>Subtitle:</strong> ${program.subtitle}</p>
+                <p><strong>Duration:</strong> ${program.duration}</p>
+              </div>
+            </div>
+            
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">Event Details</h3>
+              <div style="${emailStyles.field}">
+                <p><strong>Event Name:</strong> ${event.eventName}</p>
+                <p><strong>Start Date:</strong> ${new Date(event.startDate).toLocaleDateString()}</p>
+                <p><strong>End Date:</strong> ${new Date(event.endDate).toLocaleDateString()}</p>
+                <p><strong>Location:</strong> ${event.location}</p>
+                <p><strong>Organizer:</strong> ${event.organiser}</p>
+                <p><strong>Price:</strong> ${event.price}</p>
+              </div>
+            </div>
+            
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">Registrant Information</h3>
+              <div style="${emailStyles.field}">
+                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Mobile:</strong> ${mobileNo}</p>
+                <p><strong>Level Name:</strong> ${levelName}</p>
+              </div>
+            </div>
+            
+            ${event.organizerEmail ? `
+            <div style="margin: 20px 0; padding: 15px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
+              <p style="margin: 0; font-size: 15px;">
+                <strong>Note:</strong> ${event.organiser} (${event.organizerEmail}) has been CC'd on this notification.
+              </p>
+            </div>
+            ` : ''}
+          </div>
+          <div style="${emailStyles.footer}">
+            <p>EKAA Registration System &copy; ${new Date().getFullYear()}</p>
+          </div>
+        </div>
+      `,
       replyTo: "connect@ekaausa.com",
-    });
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Admin notification email sent successfully:", result.messageId);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error("Admin email error:", error);
+    throw error;
   }
 };
 
-const sendUserConfirmationEmail = async (registration, paymentLink) => {
+const sendUserConfirmationEmail = async (enhancedData) => {
   try {
-    await transporter.sendMail({
+    const { event, program, firstName, lastName, email, levelName } = enhancedData;
+    
+    const mailOptions = {
       from: `"EKAA USA" <${process.env.MAIL_USER}>`,
-      to: registration.email,
-      subject: `Confirmation: ${
-        registration.city?.split("|")[1]?.trim() || "EKAA Program"
-      } Registration`,
-      html: decodeEmailTemplates.userConfirmation(registration, paymentLink),
+      to: email,
+      subject: `Registration Confirmed – ${event.eventName}`,
+      html: `
+        <div style="${emailStyles.container}">
+          <div style="${emailStyles.header}">
+            <h2 style="margin: 0;">Registration Confirmed – Your EKAA Course Details</h2>
+          </div>
+          <div style="${emailStyles.content}">
+            <p>Dear ${firstName},</p>
+            <p>Thank you for registering with EKAA.</p>
+
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">Program Details</h3>
+              <div style="${emailStyles.field}">
+                <p><strong>Program:</strong> ${program.title}</p>
+                <p><strong>Subtitle:</strong> ${program.subtitle}</p>
+                <p><strong>Duration:</strong> ${program.duration}</p>
+              </div>
+            </div>
+
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">Event Details</h3>
+              <div style="${emailStyles.field}">
+                <p><strong>Event:</strong> ${event.eventName}</p>
+                <p><strong>Date:</strong> ${new Date(event.startDate).toLocaleDateString()} - ${new Date(event.endDate).toLocaleDateString()}</p>
+                <p><strong>Location:</strong> ${event.location}</p>
+                <p><strong>Organizer:</strong> ${event.organiser}</p>
+                <p><strong>Price:</strong> ${event.price}</p>
+              </div>
+            </div>
+
+            ${event.paymentLink ? `
+            <div style="margin: 20px 0; padding: 20px; background-color: #f6e8f6; border-radius: 8px; border-left: 4px solid #ba82c5;">
+              <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #2d3748;">Complete Your Registration</h3>
+              <p style="margin: 0 0 15px 0; font-size: 16px;">Please complete your payment to secure your spot:</p>
+              <a href="${event.paymentLink}" 
+                 style="${emailStyles.button}; background-color: #6e2d79; display: inline-block;">
+                Make Payment Now
+              </a>
+              <p style="margin: 10px 0 0; font-size: 14px; color: #718096;">Payment must be completed within 48 hours.</p>
+            </div>
+            ` : ''}
+
+            <div style="${emailStyles.highlightBox}">
+              <h3 style="${emailStyles.subHeading}">📅 What's Next</h3>
+              <p>A representative from EKAA will contact you shortly to guide you through the next steps.</p>
+            </div>
+
+            <p>For any queries, contact us at <a href="mailto:connect@ekaausa.com" style="color: #667eea; text-decoration: none;">connect@ekaausa.com</a>.</p>
+          </div>
+          <div style="${emailStyles.footer}">
+            <p>EKAA Learning Center &copy; ${new Date().getFullYear()}</p>
+          </div>
+        </div>
+      `,
       replyTo: "connect@ekaausa.com",
-    });
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log("User confirmation email sent successfully:", result.messageId);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error("User email error:", error);
+    throw error;
   }
 };
 

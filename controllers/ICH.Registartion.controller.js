@@ -1,4 +1,6 @@
 const ICHRegistration = require("../models/ICH.Registartion.modal");
+const HypnotherapyProgram = require("../models/HypnotherapyProgram");
+const mongoose = require("mongoose");
 const {
   sendICHUserConfirmation,
   sendICHAdminNotification,
@@ -10,35 +12,177 @@ const DOCTOR_EMAIL_MAP = {
 };
 exports.submitICHRegistration = async (req, res) => {
   try {
-    // Extract file paths
-    const files = {
-      profileImage: req.files?.profileImage?.[0]?.path,
-      idPhotofront: req.files?.frontImage?.[0]?.path,
-      idphotoback: req.files?.backImage?.[0]?.path,
+    console.log("Received body:", req.body);
+    
+    // Extract program and event information from request body
+    const { programId, upcomingEventId } = req.body;
+
+    console.log("Extracted IDs:", { programId, upcomingEventId });
+
+    // Check if both IDs are provided
+    if (!programId) {
+      return res.status(404).json({
+        success: false,
+        message: "programId is required for registration",
+        error: "Missing programId",
+      });
+    }
+
+    if (!upcomingEventId) {
+      return res.status(404).json({
+        success: false,
+        message: "upcomingEventId is required for registration",
+        error: "Missing upcomingEventId",
+      });
+    }
+
+    // Clean the data to remove duplicates and unnecessary fields
+    const cleanBody = { ...req.body };
+    delete cleanBody.level; // Remove duplicate level field
+    
+    const registrationData = {
+      ...cleanBody,
+      programId: programId,
+      upcomingEventId: upcomingEventId,
     };
 
+    console.log("Registration data:", registrationData);
+
+    // Validate that the program exists and contains the specified event
+    try {
+      console.log("Converting IDs to ObjectId...");
+      
+      // Validate ObjectId format first
+      if (!mongoose.Types.ObjectId.isValid(programId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid programId format",
+          error: "Invalid ObjectId format for programId",
+          receivedId: programId
+        });
+      }
+      
+      if (!mongoose.Types.ObjectId.isValid(upcomingEventId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid upcomingEventId format",
+          error: "Invalid ObjectId format for upcomingEventId",
+          receivedId: upcomingEventId
+        });
+      }
+      
+      // Convert strings to ObjectIds
+      const programObjectId = new mongoose.Types.ObjectId(programId);
+      const eventObjectId = new mongoose.Types.ObjectId(upcomingEventId);
+      
+      console.log("Converted ObjectIds:", { programObjectId, eventObjectId });
+
+      const program = await HypnotherapyProgram.findById(programObjectId);
+      if (!program) {
+        return res.status(404).json({
+          success: false,
+          message: "Program not found with the provided programId",
+          error: "Invalid programId",
+        });
+      }
+
+      // Check if the event exists within the program
+      const eventExists = program.upcomingEvents.some(
+        (event) => event._id.toString() === upcomingEventId
+      );
+
+      if (!eventExists) {
+        return res.status(404).json({
+          success: false,
+          message: "Event not found within the specified program",
+          error: "Invalid upcomingEventId",
+        });
+      }
+
+      // Update registrationData with the converted ObjectIds
+      registrationData.programId = programObjectId;
+      registrationData.upcomingEventId = eventObjectId;
+    } catch (error) {
+      console.log("Error validating IDs:", error);
+      
+      // Check if it's an ObjectId conversion error
+      if (error.message && error.message.includes("does not match the accepted types")) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid ID format provided. Please check programId and upcomingEventId.",
+          error: "Invalid ObjectId format",
+          receivedIds: { programId, upcomingEventId }
+        });
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format provided",
+        error: "Invalid ID format",
+        receivedIds: { programId, upcomingEventId }
+      });
+    }
+
     // Create ICH registration document
-    const ichRegistration = new ICHRegistration({
-      ...req.body,
-      ...files,
-    });
+    const ichRegistration = new ICHRegistration(registrationData);
 
     // Save to database
     await ichRegistration.save();
 
     // Send confirmation emails
-    await sendICHUserConfirmation({
-      email: req.body.email,
-      name: `${req.body.firstName} ${req.body.lastName}`,
-      registration: ichRegistration, // Pass the full registration object
-    });
+    try {
+      // Fetch program and event details for email
+      const program = await HypnotherapyProgram.findById(ichRegistration.programId);
+      if (program) {
+        const event = program.upcomingEvents.find(e => 
+          e._id.toString() === ichRegistration.upcomingEventId.toString()
+        );
+        
+        if (event) {
+          // Prepare enhanced data for emails
+          const enhancedData = {
+            ...ichRegistration.toObject(),
+            program: {
+              title: program.title,
+              subtitle: program.subtitle,
+              duration: program.duration
+            },
+            event: {
+              eventName: event.eventName,
+              startDate: event.startDate,
+              endDate: event.endDate,
+              location: event.location,
+              organiser: event.organiser,
+              price: event.price,
+              paymentLink: event.paymentLink
+            }
+          };
 
-    await sendICHAdminNotification({
-      userEmail: req.body.email,
-      userName: `${req.body.firstName} ${req.body.lastName}`,
-      registrationId: ichRegistration._id,
-      city: req.body.city,
-    });
+          // Send admin notification email with organizer email in CC
+          await sendICHAdminNotification({
+            userEmail: req.body.email,
+            userName: `${req.body.firstName} ${req.body.lastName}`,
+            registrationId: ichRegistration._id,
+            city: req.body.city,
+            organizerEmail: event.organizerEmail, // Use dynamic organizer email from event
+            eventDetails: event
+          });
+          console.log('Admin notification email sent successfully');
+
+          // Send user confirmation email
+          await sendICHUserConfirmation({
+            email: req.body.email,
+            name: `${req.body.firstName} ${req.body.lastName}`,
+            registration: enhancedData, // Pass the enhanced data with payment link
+            paymentLink: event.paymentLink, // Pass payment link separately for the template
+          });
+          console.log('User confirmation email sent successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send emails:', error);
+      // Don't fail the registration if emails fail
+    }
 
     res.status(201).json({
       success: true,
@@ -50,19 +194,11 @@ exports.submitICHRegistration = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Hypnotherapy Registration error:", error);
-
-    // Handle Multer errors
-    if (error.name === "MulterError") {
-      return res.status(400).json({
-        success: false,
-        message: `File upload error: ${error.message}`,
-      });
-    }
+    console.error("ICH Registration error:", error);
 
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to submit Hypnotherapy registration",
+      message: error.message || "Failed to submit ICH registration",
     });
   }
 };

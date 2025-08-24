@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const familyConsitalionRegistrationSchema = new mongoose.Schema({
+  programId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FamilyEvent',
+    required: [true, "Program ID is required"],
+  },
   sessionId: {
     type: String,
     required: true,
@@ -36,6 +41,16 @@ const familyConsitalionRegistrationSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
+  },
+  termsAndCondition: {
+    type: Boolean,
+    required: [true, "Terms and conditions acceptance is required"],
+    default: false,
+  },
+  communicationPreferences: {
+    type: Boolean,
+    required: [true, "Communication preferences selection is required"],
+    default: false,
   },
 
   createdAt: {

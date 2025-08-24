@@ -25,9 +25,13 @@ const ichRegistrationSchema = new mongoose.Schema(
     isSameAddress: Boolean,
     levelName: String,
     level: String,
-    profileImage: String,
-    idPhotofront: { type: String, required: false },
-    idphotoback: String,
+    // Remove file upload fields since we're not using them
+    // profileImage: String,
+    // idPhotofront: { type: String, required: false },
+    // idphotoback: String,
+    // Add program and event reference fields
+    programId: { type: mongoose.Schema.Types.ObjectId, ref: 'HypnotherapyProgram', required: true },
+    upcomingEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'HypnotherapyProgram', required: true },
   },
   {
     timestamps: true,

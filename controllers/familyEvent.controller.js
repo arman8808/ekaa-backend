@@ -191,8 +191,118 @@ const getEvent = asyncHandler(async (req, res) => {
   res.json(event);
 });
 
+// @desc    Get all events for users (filtered - no expired events)
+// @route   GET /api/events/user
+// @access  Public
+const getEventsForUsers = asyncHandler(async (req, res) => {
+  const { search } = req.query;
+
+  let query = {};
+
+  if (search) {
+    query = {
+      $or: [
+        { location: { $regex: search, $options: "i" } },
+        { organisedby: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+        { date: { $regex: search, $options: "i" } },
+        { "facilitator": { $regex: search, $options: "i" } }
+      ],
+    };
+  }
+
+  // Get current date (start of day)
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+
+  // Add date filter to exclude expired events
+  query.$and = [
+    ...(query.$and || []),
+    {
+      $or: [
+        // Events with startDate that is today or in the future
+        { startDate: { $gte: currentDate } },
+        // Events with only date field (legacy) that is today or in the future
+        { date: { $gte: currentDate.toLocaleDateString() } }
+      ]
+    }
+  ];
+
+  const events = await familyEvent
+    .find(query)
+    .sort({ startDate: 1 }) // Sort by startDate in ascending order
+    .lean() // Convert to plain JavaScript objects
+    .exec();
+
+  // Format dates for display and filter out any remaining expired events
+  const formattedEvents = events
+    .map(event => {
+      // For backward compatibility, include the old date format if it exists
+      if (!event.date && event.startDate) {
+        event.date = formatLegacyDate(event.startDate);
+      }
+      return event;
+    })
+    .filter(event => {
+      // Additional filter to ensure no expired events slip through
+      if (event.startDate) {
+        return new Date(event.startDate) >= currentDate;
+      }
+      // For legacy events with only date field, check if it's a valid future date
+      if (event.date) {
+        const eventDate = new Date(event.date);
+        return !isNaN(eventDate.getTime()) && eventDate >= currentDate;
+      }
+      return false; // Exclude events with no valid date
+    });
+
+  res.json({
+    events: formattedEvents,
+    totalEvents: formattedEvents.length,
+  });
+});
+
+// @desc    Get single event for users (filtered - no expired events)
+// @route   GET /api/events/user/:id
+// @access  Public
+const getEventForUsers = asyncHandler(async (req, res) => {
+  const event = await familyEvent.findById(req.params.id);
+
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+
+  // Check if event is expired
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+
+  let isExpired = false;
+  
+  if (event.startDate) {
+    isExpired = new Date(event.startDate) < currentDate;
+  } else if (event.date) {
+    const eventDate = new Date(event.date);
+    isExpired = !isNaN(eventDate.getTime()) && eventDate < currentDate;
+  }
+
+  if (isExpired) {
+    res.status(404);
+    throw new Error("Event not found or has expired");
+  }
+
+  // For backward compatibility
+  if (!event.date && event.startDate) {
+    event.date = formatLegacyDate(event.startDate);
+  }
+
+  res.json(event);
+});
+
 module.exports = {
   getEvents,
+  getEventsForUsers,
+  getEventForUsers,
   createEvent,
   updateEvent,
   deleteEvent,

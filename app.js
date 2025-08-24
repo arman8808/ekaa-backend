@@ -8,6 +8,10 @@ const familyEvent = require('./routes/familyEventRoutes');
 const hypnotherapy = require('./routes/hypnotherapyRoutes');
 const decodeRoutes = require('./routes/decodeRoutes');
 const eventsRoutes = require('./routes/eventsRoutes');
+// Queue status routes removed
+
+// Email queue removed - emails sent directly
+
 dotenv.config();
 
 const express = require("express");
@@ -21,6 +25,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(`/api/registration`, registrationRoutes);
@@ -32,6 +38,7 @@ app.use('/api/familyEvent', familyEvent);
 app.use('/api/hypnotherapy', hypnotherapy);
 app.use('/api/decode', decodeRoutes);
 app.use('/api/events', eventsRoutes);
+// Queue status routes removed
 app.get("/", (req, res) => {
   console.log("server is running");
   res.status(200).json({ message: "Server is running" });

@@ -209,3 +209,84 @@ exports.getProgramById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Get a single program by ID for user panel (filtered - no expired events)
+exports.getProgramByIdForUsers = async (req, res) => {
+  try {
+    const program = await HypnotherapyProgram.findById(req.params.id);
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    const currentDate = new Date();
+    const programCopy = program.toObject();
+
+    // Filter out expired events from upcomingEvents array only
+    if (programCopy.upcomingEvents && programCopy.upcomingEvents.length > 0) {
+      const validEvents = programCopy.upcomingEvents.filter(event => {
+        if (!event.endDate) return false; // Skip events without end date
+        return new Date(event.endDate) >= currentDate;
+      });
+
+      // Update only the upcomingEvents array
+      programCopy.upcomingEvents = validEvents;
+    }
+
+    res.json(programCopy);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get all programs for user panel (filtered - no expired events)
+exports.getProgramsForUsers = async (req, res) => {
+  try {
+    console.log('this api hit')
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const currentDate = new Date();
+
+    const query = {
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { subtitle: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+      ],
+    };
+
+    const programs = await HypnotherapyProgram.find(query)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+    // Show ALL programs, but filter only the upcomingEvents array
+    const programsWithFilteredEvents = programs.map(program => {
+      const programCopy = program.toObject();
+      
+      if (programCopy.upcomingEvents && programCopy.upcomingEvents.length > 0) {
+        // Filter out expired events from upcomingEvents array only
+        const validEvents = programCopy.upcomingEvents.filter(event => {
+          if (!event.endDate) return false; // Skip events without end date
+          return new Date(event.endDate) >= currentDate;
+        });
+        
+        // Update only the upcomingEvents array
+        programCopy.upcomingEvents = validEvents;
+      }
+      
+      return programCopy;
+    });
+
+    const count = await HypnotherapyProgram.countDocuments(query);
+
+    res.json({
+      programs: programsWithFilteredEvents,
+      totalPages: Math.ceil(count / limit),
+      currentPage: parseInt(page),
+      totalPrograms: count,
+      totalProgramsReturned: programsWithFilteredEvents.length,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
